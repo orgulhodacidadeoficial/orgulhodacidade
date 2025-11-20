@@ -4,7 +4,7 @@
   "description": "Website official do Boi Orgulho da Cidade",
   "main": "backend/server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node backend/server.js",
     "resize-banners": "node scripts/resize-banners.js"
   },
   "dependencies": {
