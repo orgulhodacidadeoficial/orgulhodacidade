@@ -1,0 +1,148 @@
+/* Estilos específicos para a página de Músicas - isolados e responsivos */
+:root{
+  --bg:#0f1720;
+  --card:#0b1220;
+  --muted:#cbd5e1;
+  --accent:#ff4d88;
+  --accent-2:#7b61ff;
+  --glass: rgba(255,255,255,0.04);
+}
+
+/* Escopo principal para evitar vazamento para outras páginas */
+.music-content{
+  background: linear-gradient(180deg, var(--bg), #050608);
+  color: #e6eef8;
+  min-height: 60vh;
+  padding: 40px 18px 80px;
+  box-sizing: border-box;
+  font-family: 'Poppins', system-ui, Arial, sans-serif;
+}
+
+.music-header-section{
+  max-width: 1100px;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+.music-title{
+  font-size: clamp(2rem, 4.8vw, 3.4rem);
+  margin: 0 0 6px 0;
+  background: linear-gradient(90deg,var(--accent),var(--accent-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+.music-subtitle{
+  margin: 0 0 12px 0;
+  color: var(--muted);
+}
+
+.btn-add-music{ /* small clear button used by admin only */
+  display: inline-flex;
+  gap:8px;
+  align-items:center;
+  background: linear-gradient(90deg, rgba(255,77,136,0.12), rgba(123,97,255,0.08));
+  color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* Modal overlay and content */
+.modal-overlay{ /* musics-specific modal */
+  position: fixed;
+  inset: 0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(4,7,11,0.6);
+  z-index: 1100;
+  padding: 20px;
+}
+.modal-overlay.hidden{ display:none; }
+.modal-content{
+  width: 100%;
+  max-width: 760px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.03);
+}
+.modal-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.modal-header h2{ margin:0; font-size:1.25rem; color: #fff; }
+.modal-close{ background:transparent; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; }
+
+/* Form styles scoped */
+#add-music-form{ display:flex; flex-direction:column; gap:12px; margin-top:12px; }
+.form-group{ display:flex; flex-direction:column; gap:6px; }
+.form-group label{ font-size:0.9rem; color: var(--muted); }
+.form-group input[type="text"], .form-group input[type="file"]{
+  width:100%;
+  padding: 12px 14px;
+  border-radius:8px;
+  border: none;
+  background: rgba(255,255,255,0.03);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+}
+.btn-submit{
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(90deg,var(--accent),var(--accent-2));
+  color: white;
+  font-weight:600;
+  cursor:pointer;
+  width: 160px;
+}
+
+/* Central player card */
+.music-main-layout{ max-width:1100px; margin: 14px auto 24px; padding: 0 12px; }
+.central-player{
+  display:flex;
+  gap:18px;
+  align-items:center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+.central-art img{ width:120px; height:120px; object-fit:cover; border-radius:10px; }
+.central-info{ flex:1; display:flex; flex-direction:column; gap:8px; }
+.central-title{ margin:0; font-size:1.1rem; color:#fff; }
+.music-item-artist{ color:var(--muted); font-size:0.95rem; }
+.central-audio{ width:100%; margin-top:6px; }
+
+.custom-controls{ display:flex; flex-direction:column; gap:12px; }
+.transport-group{ display:flex; gap:8px; align-items:center; }
+.btn-small, .btn-play-custom{ background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; cursor:pointer; }
+.btn-play-custom{ background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:white; font-weight:700; padding:10px 14px; }
+
+.progress-group{ display:flex; gap:8px; align-items:center; }
+.progress-custom{ width:100%; }
+
+.floating-playlist{ max-height:260px; overflow:auto; background: rgba(0,0,0,0.2); border-radius:8px; padding:8px; }
+
+/* Plataformas */
+.platform-links-section{ max-width:1100px; margin: 36px auto; padding: 0 12px; }
+.platforms-title{ color:var(--muted); margin:0 0 12px 0; }
+.platform-links{ display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+.platform{ background: rgba(255,255,255,0.02); padding:12px; border-radius:10px; display:flex; align-items:center; gap:12px; }
+.platform-icon{ width:48px; height:48px; object-fit:contain; }
+.platform-button{ margin-left:auto; color:var(--muted); text-decoration:none; border:1px solid rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; }
+
+/* Responsive behavior */
+@media (max-width:900px){
+  .central-player{ flex-direction:column; align-items:flex-start; }
+  .central-art img{ width:100%; height:auto; border-radius:8px; }
+}
+
+@media (max-width:480px){
+  .music-content{ padding:24px 12px 80px; }
+  .music-title{ font-size:1.8rem; }
+  .btn-submit{ width:100%; }
+}
+
+/* Small helper to ensure form elements are readable even if global CSS is broken */
+input, button, select, textarea{ font-family: inherit; }

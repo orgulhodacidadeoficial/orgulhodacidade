@@ -13,3 +13,10 @@ coverage/
 Frontend/inscricoes.json
 Frontend/contatos.json
 Frontend/contratacoes.json
+uploads/
+logs/
+data/config.json
+data/*.secret.json
+.env.*
+.cache/
+*.log

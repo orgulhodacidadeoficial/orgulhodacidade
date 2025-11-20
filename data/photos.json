@@ -1,0 +1,138 @@
+[
+  {
+    "src": "images/ensaios/1763174649992-brincante7.jpg",
+    "categoria": "Ensaios",
+    "storyOnly": true,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/ensaios/1763174536769-brincante5.jpg",
+    "categoria": "Ensaios",
+    "storyOnly": true,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/carrossel-brincantes/1763173638500-brincante7.jpg",
+    "categoria": "carrossel-brincantes",
+    "storyOnly": false,
+    "name": "GUILHERME",
+    "role": "Vaqueiro",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/carrossel-brincantes/1763173624260-brincante5.jpg",
+    "categoria": "carrossel-brincantes",
+    "storyOnly": false,
+    "name": "EDUARDO",
+    "role": "Vaqueiro",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/carrossel-brincantes/1763173608538-brincante4.jpg",
+    "categoria": "carrossel-brincantes",
+    "storyOnly": false,
+    "name": "LK",
+    "role": "Vaqueiro",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/carrossel-brincantes/1763173595750-brincante3.jpg",
+    "categoria": "carrossel-brincantes",
+    "storyOnly": false,
+    "name": "CAROL",
+    "role": "Guerreira",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/carrossel-brincantes/1763173569655-brincante2.jpg",
+    "categoria": "carrossel-brincantes",
+    "storyOnly": false,
+    "name": "ROMULO",
+    "role": "Pajé",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/carrossel-brincantes/1763173561652-brincante1.jpg",
+    "categoria": "carrossel-brincantes",
+    "storyOnly": false,
+    "name": "RONIZE",
+    "role": "Vaqueiro",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/galeria/1763172323913-brincante7.jpg",
+    "categoria": "galeria",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/galeria/1763172323912-brincante6.jpg",
+    "categoria": "galeria",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/galeria/1763172323910-brincante5.jpg",
+    "categoria": "galeria",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/galeria/1763172323905-brincante4.jpg",
+    "categoria": "galeria",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/galeria/1763172323901-brincante3.jpg",
+    "categoria": "galeria",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/galeria/1763172323898-brincante2.jpg",
+    "categoria": "galeria",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/galeria/1763172323895-brincante1.jpg",
+    "categoria": "galeria",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/titulo/1763168484605-2.png",
+    "categoria": "titulo",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  },
+  {
+    "src": "images/titulo/1763168476475-1.jpeg",
+    "categoria": "titulo",
+    "storyOnly": false,
+    "name": "",
+    "role": "",
+    "alt": "Banner"
+  }
+]

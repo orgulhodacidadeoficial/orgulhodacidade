@@ -5,43 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boi Orgulho da Cidade - Seletiva 2026</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Ícones do site (favicon) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="logo.png">
+    <link rel="shortcut icon" href="logo.png" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <meta name="theme-color" content="#ff8a00">
 </head>
 <body>
     <header class="main-header">
         <nav class="main-nav">
-            <div class="nav-container">                
+            <div class="nav-container">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <span class="logo-text">Seletiva</span>
+                </div>
                 <ul class="nav-links">
-                    <li><a href="index.html">Início</a></li>
-                    <li><a href="fotos.html">Fotos</a></li>
-                    <li><a href="musicas.html">Músicas</a></li>
-                    <li><a href="sobre.html">Sobre</a></li>
-                    <li><a href="inscricao.html" class="active">Seletiva 2026</a></li>
-                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="index.html"><i class="fas fa-home"></i> <span>Início</span></a></li>
+                    <li><a href="fotos.html"><i class="fas fa-images"></i> <span>Fotos</span></a></li>
+                    <li><a href="musicas.html"><i class="fas fa-music"></i> <span>Músicas</span></a></li>                   
+                    <li><a href="inscricao.html" class="active"><i class="fas fa-ticket-alt"></i> <span>Seletiva 2026</span></a></li>
+                    <li><a href="contato.html"><i class="fas fa-envelope"></i> <span>Contato</span></a></li>
+                    <li><a href="sobre.html"><i class="fas fa-info-circle"></i> <span>Sobre</span></a></li>
                 </ul>
-                <button class="mobile-menu" aria-label="Menu">☰</button>
             </div>
             <div class="nav-accent" aria-hidden="true"></div>
         </nav>
     </header>
 
     <main class="subscription-content">
-        <h1>Seletiva 2026</h1>
+        <div class="seletiva-header-section">
+            <h1 class="music-title">Seletiva 2026</h1>
+            
+            <p class="seletiva-subtitle">Faça parte do nosso grupo! Inscreva-se agora e seja um dos nossos brincantes</p>
+        </div>
         
-        <section class="subscription-form">
-            <h2>Faça parte do nosso time!</h2>
-            <form id="inscricaoForm" onsubmit="return handleInscricao(event)">
+        <div class="subscription-forms">
+        <section class="subscription-form-wrapper">
+            <h2 class="platforms-title">Formulário de Inscrição</h2>
+            <form id="inscricaoForm" class="subscription-form" onsubmit="return handleInscricao(event)">
                 <div class="form-group">
-                    <label for="nome">Nome Completo *</label>
+                    <label for="nome">Nome Completo <span class="required-asterisk">*</span></label>
                     <input type="text" id="nome" name="nome" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="idade">Idade *</label>
+                    <label for="idade">Idade <span class="required-asterisk">*</span></label>
                     <input type="number" id="idade" name="idade" min="1" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="tipo_participacao">Tipo de Participação *</label>
+                    <label for="tipo_participacao">Tipo de Participação <span class="required-asterisk">*</span></label>
                     <select id="tipo_participacao" name="tipo_participacao" required>
                         <option value="">Selecione uma opção</option>
                         <option value="india">Índia</option>
@@ -51,34 +68,23 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="telefone">Telefone *</label>
+                    <label for="telefone">Telefone <span class="required-asterisk">*</span></label>
                     <input type="tel" id="telefone" name="telefone" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="bairro">Bairro *</label>
+                    <label for="bairro">Bairro <span class="required-asterisk">*</span></label>
                     <input type="text" id="bairro" name="bairro" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="email">E-mail *</label>
+                    <label for="email">E-mail <span class="required-asterisk">*</span></label>
                     <input type="email" id="email" name="email" required>
                 </div>
-
-                <div class="form-group">
-                    <label for="observacoes">Observações</label>
-                    <textarea id="observacoes" name="observacoes" rows="4"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="midia">Envie sua foto ou vídeo</label>
-                    <input type="file" id="midia" name="midia" accept="image/*,video/*">
-                    <small>Formatos aceitos: jpg, png, mp4 (máx. 10MB)</small>
-                </div>
-
                 <button type="submit" class="btn-primary">Enviar Inscrição</button>
             </form>
         </section>
+        </div>
     </main>
 
     <footer class="main-footer">
@@ -92,10 +98,10 @@
                 <ul class="footer-links">
                     <li><a href="index.html">Início</a></li>
                     <li><a href="fotos.html">Fotos</a></li>
-                    <li><a href="musicas.html">Músicas</a></li>
-                    <li><a href="sobre.html">Sobre</a></li>
+                    <li><a href="musicas.html">Músicas</a></li>                    
                     <li><a href="inscricao.html">Seletiva 2026</a></li>
                     <li><a href="contato.html">Contato</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
                 </ul>
             </div>
             <div class="footer-section">
@@ -107,8 +113,7 @@
                 </ul>
                 <div class="footer-social">
                     <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>                   
                 </div>
             </div>
         </div>
@@ -117,8 +122,21 @@
         </div>
     </footer>
 
+    <!-- Menu inferior fixo (mobile) -->
+    <nav class="bottom-nav" aria-label="Menu inferior">
+        <ul class="bottom-links">
+            <li><a href="index.html"><i class="fas fa-home"></i><span>Início</span></a></li>
+            <li><a href="fotos.html"><i class="fas fa-images"></i><span>Fotos</span></a></li>
+            <li><a href="musicas.html"><i class="fas fa-music"></i><span>Músicas</span></a></li>            
+            <li><a href="inscricao.html" class="active"><i class="fas fa-ticket-alt"></i><span>Seletiva</span></a></li>
+            <li><a href="contato.html"><i class="fas fa-envelope"></i><span>Contato</span></a></li>
+            <li><a href="sobre.html"><i class="fas fa-info-circle"></i><span>Sobre</span></a></li>
+        </ul>
+    </nav>
+
     <!-- Font Awesome para ícones de redes sociais -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="script.js"></script>
+    <script src="admin.js" defer></script>
 </body>
 </html>

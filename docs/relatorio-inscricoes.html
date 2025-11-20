@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Inscrições - Seletiva 2026</title>
+    <style>
+        @media screen {
+            body { max-width: 21cm; margin: 1cm auto; background: #f0f0f0; }
+            .page { background: white; padding: 1cm; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+            .no-print { display: block; }
+        }
+        @media print {
+            /* Use A4 portrait for printing and larger safe margins to avoid
+               content being cut by printers. Slightly increase padding and
+               keep readable font size for print. */
+            body { margin: 0; background: white; font-size: 10pt; }
+            /* .page in print should match A4 portrait */
+            .page { width: 21cm; min-height: 29.7cm; padding: 0.8cm; box-sizing: border-box; margin: 0 auto; }
+            .no-print { display: none; }
+            /* Reduce spacing for printed rows but keep readability */
+            .inscricao { margin-bottom: 0.06cm; padding: 0.06cm 0; }
+            .cabecalho-colunas { padding: 0.18cm 0; margin-bottom: 0.18cm; }
+            .grupo-data { margin: 0.18cm 0; }
+            .total { font-size: 9pt; }
+            ol.inscricoes { margin: 0 0 0 0.4cm; padding: 0; }
+            /* Allow wrapping inside fields so content doesn't overflow page width */
+            .campo { white-space: normal; }
+            /* Transform printed/exported report to uppercase as requested */
+            .page { text-transform: uppercase; }
+            @page {
+                /* Use 1cm as a safe margin for most printers */
+                margin: 1cm;
+                size: A4;
+            }
+        }
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.2;
+            font-size: 10pt;
+        }
+        .page { 
+            width: 21cm;
+            min-height: 29.7cm;
+            box-sizing: border-box;
+            margin: 0 auto;
+            /* Show the report area in uppercase on screen as well */
+            text-transform: uppercase;
+        }
+        h1 { 
+            color: #0b3a91; 
+            margin: 0 0 0.2cm;
+            font-size: 14pt;
+        }
+        .header { margin-bottom: 0.4cm; }
+        .data { 
+            color: #666; 
+            margin-bottom: 0.3cm;
+            font-size: 9pt;
+        }
+        /* Constrain the table block so it appears as a centered report column
+           while keeping columns left-aligned inside (standard pattern). */
+        .table-area {
+            max-width: 18cm;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .inscricoes { 
+            padding-left: 0;
+            margin: 0;
+            width: 100%;
+            max-width: 18cm;
+            list-style: none;
+            margin-left: 0;
+        }
+        .inscricao { 
+            margin-bottom: 0.1cm;
+            padding: 0.1cm 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            gap: 0.4cm;
+            break-inside: avoid;
+            align-items: center;
+            /* standard pattern: left-align row contents */
+            justify-content: flex-start;
+        }
+        .cabecalho-colunas {
+            display: flex;
+            gap: 0.4cm;
+            padding: 0.3cm 0;
+            margin-bottom: 0.2cm;
+            border-bottom: 2px solid #0b3a91;
+            font-weight: bold;
+            color: #0b3a91;
+            /* align header cells with the left-aligned columns */
+            justify-content: flex-start;
+        }
+        .inscricao > div {
+            margin-right: 0.3cm;
+        }
+        .inscricao > div:last-child {
+            margin-right: 0;
+        }
+        .inscricao strong {
+            color: #0b3a91;
+        }
+        .grupo-data {
+            margin: 0.4cm 0;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .grupo-data h3 {
+            color: #0b3a91;
+            border-bottom: 1px solid #0b3a91;
+            padding-bottom: 0.1cm;
+            margin: 0 0 0.2cm 0;
+            font-size: 12pt;
+        }
+        button {
+            background: #0b3a91;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0046ad;
+        }
+        .total {
+            margin: 0.2cm 0;
+            font-weight: bold;
+            color: #0b3a91;
+            font-size: 10pt;
+        }
+        /* Allow fields to wrap so text is not truncated with ellipsis.
+           Header cells will be centered via .cabecalho-colunas override. */
+        .campo {
+            display: inline-block;
+            /* allow wrapping of long text to avoid truncation */
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            vertical-align: top;
+        }
+        /* Column width guidance (min widths); remove conflicting/duplicate rules */
+        .campo-nome { min-width: 6cm; max-width: 6cm; }
+        .campo-tel { min-width: 3cm; max-width: 3cm; }
+        .campo-idade { min-width: 1.8cm; max-width: 2cm; }
+        .campo-bairro { min-width: 4cm; max-width: 5cm; }
+        /* Give more room for 'PARTICIPAÇÃO' so it doesn't get cut off */
+        .campo-part { min-width: 3.5cm; max-width: 5cm; }
+
+        /* Header cells: center text and allow wrapping so full words appear */
+        .cabecalho-colunas .campo {
+            /* header labels align with their columns (left) for standard look */
+            text-align: left;
+            white-space: normal;
+            overflow: visible;
+        }
+        @media print {
+            .inscricao { page-break-inside: avoid; }
+            .grupo-data { page-break-inside: avoid; }
+        }
+    </style>
+    <!-- Ícones do site (favicon) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="logo.png">
+    <link rel="shortcut icon" href="logo.png" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <meta name="theme-color" content="#ff8a00">
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 1cm; text-align: center;">
+        <button onclick="window.print()">🖨️ Imprimir Relatório 2026</button>
+    </div>
+
+    <div class="page">
+        <div class="header">
+            <h1>Relatório de Inscrições - Seletiva 2026</h1>
+            <div class="data">Gerado em: <span id="dataGeracao"></span></div>
+        </div>
+        <div id="conteudo"></div>
+    </div>
+
+    <script>
+        // Format date as dd/mm/yyyy
+        function formatDate(date) {
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        // Group inscriptions by date
+        function groupByDate(inscricoes) {
+            const groups = {};
+            inscricoes.forEach(i => {
+                const date = new Date(Number(i.receivedAt));
+                const dateStr = formatDate(date);
+                if (!groups[dateStr]) groups[dateStr] = [];
+                groups[dateStr].push(i);
+            });
+            return groups;
+        }
+
+        // Render inscriptions grouped by date
+        async function renderRelatorio() {
+            try {
+                // Set generation date
+                document.getElementById('dataGeracao').textContent = new Date().toLocaleString('pt-BR');
+
+                // Fetch inscriptions
+                const r = await fetch('/api/admin/inscricoes', { credentials: 'include' });
+                if (!r.ok) throw new Error('Falha ao carregar inscrições');
+                const inscricoes = await r.json();
+
+                if (!Array.isArray(inscricoes) || inscricoes.length === 0) {
+                    document.getElementById('conteudo').innerHTML = '<p>Nenhuma inscrição encontrada.</p>';
+                    return;
+                }
+
+                // Sort by receivedAt desc
+                inscricoes.sort((a, b) => (b.receivedAt || 0) - (a.receivedAt || 0));
+
+                // Group by date
+                const grupos = groupByDate(inscricoes);
+                
+                // Generate HTML
+                let html = '';
+                let numeroGeral = 1;
+
+                Object.entries(grupos).forEach(([data, lista]) => {
+                    html += `
+                        <div class="grupo-data">
+                            <h3>Inscrições do dia ${data}</h3>
+                            <div class="total">Total do dia: ${lista.length}</div>
+                            <div class="cabecalho-colunas">
+                                <div class="campo campo-nome">NOME</div>
+                                <div class="campo campo-tel">TELEFONE</div>
+                                <div class="campo campo-idade">IDADE</div>
+                                <div class="campo campo-bairro">BAIRRO</div>
+                                <div class="campo campo-part">PARTICIPAÇÃO</div>
+                            </div>
+                            <ol class="inscricoes" start="${numeroGeral}">`;
+
+                    // Sort lista by desired participation order then by name
+                    const participationOrder = { 'vaqueiro': 0, 'india': 1, 'indio': 2 };
+                    lista.sort((a, b) => {
+                        const pa = (a.tipo_participacao || '').toLowerCase();
+                        const pb = (b.tipo_participacao || '').toLowerCase();
+                        const oa = (participationOrder.hasOwnProperty(pa) ? participationOrder[pa] : 99);
+                        const ob = (participationOrder.hasOwnProperty(pb) ? participationOrder[pb] : 99);
+                        if (oa !== ob) return oa - ob;
+                        // fallback: alphabetical by name
+                        return String((a.nome || '')).localeCompare(String((b.nome || '')));
+                    });
+
+                    lista.forEach(item => {
+                        html += `
+                            <li class="inscricao">
+                                <div class="campo campo-nome">${item.nome || '-'}</div>
+                                <div class="campo campo-tel">${item.telefone || '-'}</div>
+                                <div class="campo campo-idade">${item.idade || '-'}</div>
+                                <div class="campo campo-bairro">${item.bairro || '-'}</div>
+                                <div class="campo campo-part">${item.tipo_participacao || '-'}</div>
+                            </li>
+                        `;
+                    });
+
+                    html += '</ol></div>';
+                    numeroGeral += lista.length;
+                });
+
+                html += `<div class="total">Total Geral: ${inscricoes.length} inscrições</div>`;
+                document.getElementById('conteudo').innerHTML = html;
+            } catch (err) {
+                alert('❌ Erro ao gerar relatório: ' + err.message);
+            }
+        }
+
+        // Load on open
+        renderRelatorio();
+
+        
+    </script>
+    <script src="admin.js" defer></script>
+</body>
+</html>

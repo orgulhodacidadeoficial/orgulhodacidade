@@ -15,4 +15,6 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# Execute explicitamente o servidor dentro da pasta `backend`
+# O projeto tem o servidor em `backend/server.js`, não em `/app/server.js`.
+CMD ["npm", "start"]

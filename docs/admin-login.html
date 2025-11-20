@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Login</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .card{background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.08);width:320px}
+    input{width:100%;padding:0.6rem;margin-top:0.6rem;border-radius:6px;border:1px solid #ddd}
+    button{margin-top:0.8rem;padding:0.6rem 0.8rem;width:100%;background:#0046ad;color:#fff;border:none;border-radius:6px;cursor:pointer}
+    .err{color:#b00020;margin-top:0.6rem}
+  </style>
+  <!-- Ícones do site (favicon) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="logo.png">
+  <link rel="shortcut icon" href="logo.png" type="image/x-icon">
+  <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+  <meta name="theme-color" content="#ff8a00">
+</head>
+<body>
+  <div class="card">
+    <h3>Área Administrativa</h3>
+    <p>Informe a senha para acessar as inscrições e contatos.</p>
+    <input id="pwd" type="password" placeholder="Senha" autocomplete="off" />
+    <button id="loginBtn">Entrar</button>
+    <div id="msg" class="err" role="alert" aria-live="polite"></div>
+  </div>
+    <script src="admin.js" defer></script>
+  <script>
+    const btn = document.getElementById('loginBtn');
+    const pwd = document.getElementById('pwd');
+    const msg = document.getElementById('msg');
+    btn.addEventListener('click', () => doLogin());
+    pwd.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') doLogin(); });
+    function doLogin(){
+      msg.textContent = '';
+      const password = pwd.value || '';
+      fetch('/admin/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ password }) })
+        .then(r => {
+          if (!r.ok) throw r;
+          return r.json();
+        })
+        .then(js => {
+          if (js && js.ok) {
+            // server-side session now used; just redirect to admin
+            window.location = '/admin';
+          } else msg.textContent = 'Senha inválida';
+        })
+        .catch(async err => {
+          try { const t = await err.json(); msg.textContent = t && t.error ? t.error : 'Erro ao autenticar'; } catch(e){ msg.textContent = 'Erro ao autenticar'; }
+        });
+    }
+  </script>
+</body>
+</html>

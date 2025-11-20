@@ -1,56 +1,132 @@
-# Chinezlanches - Dev Server
+# 🎪 Boi Orgulho da Cidade - Website
 
-Este repositório contém um frontend estático em `Frontend/` e um servidor Node/Express simples (`server.js`) usado para desenvolvimento local. O servidor expõe APIs para anexar inscrições, contatos e solicitações de contratação a arquivos JSON na pasta `Frontend/`.
+Website oficial do Boi Orgulho da Cidade com informações sobre apresentações, fotos, músicas e inscrições para seletivas.
 
-## Como rodar localmente
-1. Instale dependências (uma vez):
+## 🚀 Como Rodar
 
-```powershell
+### Pré-requisitos
+- Node.js (v14+)
+- npm ou yarn
+
+### Instalação
+
+```bash
+# Clonar o repositório
+git clone https://github.com/orgulhodacidade2/orgulhodacidade.git
+cd orgulhodacidade
+
+# Instalar dependências
 npm install
-```
 
-2. Defina a senha administrativa (recomendado):
-
-```powershell
-$env:ADMIN_PASSWORD = 'uma_senha_forte_aqui'
-```
-
-Se você não definir `ADMIN_PASSWORD`, o servidor gerará uma senha temporária na saída do console para este processo (apenas para conveniência em desenvolvimento). Ainda assim, é recomendado sempre definir uma senha forte.
-
-3. Inicie o servidor:
-
-```powershell
+# Iniciar o servidor
 npm start
 ```
 
-O servidor por padrão roda em `http://localhost:3000`. Para alterar a porta, defina a variável `PORT` antes de iniciar.
+O servidor estará disponível em `http://localhost:3000`
 
-## Endpoints úteis
-- POST `/api/inscricao` — recebe JSON com campos como `nome`, `telefone`, `email`, `bairro`, `tipo_participacao`, `observacoes`. As submissões são anexadas em `Frontend/inscricoes.json`.
-- POST `/api/contato` — recebe `nome`, `email`, `mensagem` e salva em `Frontend/contatos.json`.
-- POST `/api/contratacao` — recebe `nomeContratante`, `emailContratante`, `telefoneContratante`, `detalhes` e salva em `Frontend/contratacoes.json`.
+## 📁 Estrutura do Projeto
 
-### Painel administrativo
-- Acesse `/admin` para abrir o painel administrativo (requer login).
-- Página de login está em `/admin-login.html`.
+```
+├── Frontend/          # Arquivos HTML, CSS, JS e imagens
+├── backend/           # Servidor Node.js e API
+├── data/              # Arquivos JSON (banco de dados)
+└── package.json       # Dependências do projeto
+```
 
-## Armazenamento
-Os dados são salvos em arquivos JSON dentro da pasta `Frontend/`:
-- `Frontend/inscricoes.json`
-- `Frontend/contatos.json`
-- `Frontend/contratacoes.json`
+### Frontend (`/Frontend`)
+- **HTML**: Páginas principais (index, fotos, músicas, etc.)
+- **CSS**: Estilos responsivos
+- **JS**: Lógica do cliente
+- **images/**: Imagens e ícones
+- **audio/**: Arquivos de áudio
 
-O servidor garante que estes arquivos existam e sejam arrays vazios ao iniciar.
+### Backend (`/backend`)
+- **server.js**: Servidor Express.js
+- **uploads/**: Arquivos enviados pelo usuário
 
-## Segurança (recomendações)
-- Não use o servidor deste repositório em produção sem melhorias de segurança.
-- Defina `ADMIN_PASSWORD` via variável de ambiente antes de iniciar o servidor.
-- Use HTTPS em produção e configure cookies com `Secure` e `SameSite` apropriados.
-- Para produção, prefira um banco de dados e uma store de sessão persistente (por exemplo Redis).
+### Data (`/data`)
+- **inscricoes.json**: Dados de inscrições
+- **contatos.json**: Mensagens de contato
+- **contratacoes.json**: Solicitações de contratação
+- **events.json**: Eventos e apresentações
+- **photos.json**: Metadados de fotos
+- **stories.json**: Histórias/notícias
+- **users.json**: Usuários registrados
+- **playlist-sync.json**: Playlist de músicas
 
-## Utilitários incluídos
-- O servidor tenta corrigir arquivos JSON corrompidos inicializando-os como `[]` quando necessário.
+## 🔐 Admin
 
-## Se algo falhar
-- Verifique os logs do servidor ao iniciar; mensagens sobre senha temporária ou criação de arquivos são exibidas.
-- Se quiser que eu adicione export CSV, email de notificação, ou autenticação/admin mais forte (bcrypt, usuários), posso implementar essas melhorias.
+Para acessar a área de administrador:
+1. Vá para `http://localhost:3000/admin-login.html`
+2. Defina a senha via variável de ambiente `ADMIN_PASSWORD` (veja `.env.example`).
+	- Em desenvolvimento, se `ADMIN_PASSWORD` não for definida o valor padrão de desenvolvimento será usado (não recomendado).
+
+No painel de admin você pode:
+- Gerenciar inscrições
+- Ver mensagens de contato
+- Gerenciar fotos e galerias
+- Editar eventos e apresentações
+- Gerenciar playlist de músicas
+
+## 📚 Funcionalidades
+
+- ✅ **Galeria de Fotos**: Visualize fotos dos eventos
+- ✅ **Reprodutor de Músicas**: Ouça as músicas do boi
+- ✅ **Inscrições**: Sistema de inscrição para seletivas 2026
+- ✅ **Contato**: Formulário de contato e contratação
+- ✅ **Painel Admin**: Gerencie todo o conteúdo
+
+## 📦 Dependências
+
+- **express**: Framework web
+- **express-session**: Gerenciamento de sessões
+- **multer**: Upload de arquivos
+- **body-parser**: Parsing de requisições
+- **cors**: Suporte a CORS
+- **ws**: WebSocket para sincronização em tempo real
+- **sharp**: Processamento de imagens
+
+## 🌐 Deployment
+
+### Heroku
+```bash
+git push heroku main
+```
+
+### Seu servidor pessoal
+```bash
+npm start
+```
+
+Define `PORT` via variável de ambiente se necessário:
+```bash
+PORT=8000 npm start
+```
+
+## 📝 Notas
+
+- Os dados são persistidos em arquivos JSON em `/data`
+- Imagens são servidas de `/Frontend/images`
+- Arquivos enviados vão para `/backend/uploads`
+ - A senha de admin deve ser configurada usando a variável `ADMIN_PASSWORD` (veja `.env.example`).
+
+## 🤝 Contribuições
+
+Para contribuir:
+1. Fork o repositório
+2. Crie uma branch (`git checkout -b feature/minha-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona minha feature'`)
+4. Push para a branch (`git push origin feature/minha-feature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+ISC
+
+## 👥 Autor
+
+Orgulho da Cidade Team
+
+---
+
+**Site**: [Boi Orgulho da Cidade](http://www.orgulhodacidade.com.br)

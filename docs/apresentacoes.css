@@ -1,0 +1,517 @@
+/* Estilos para as apresentações */
+.apresentacoes {
+    padding: 4rem 0;
+    position: relative;
+    background: linear-gradient(180deg, #000000 0%, #0a0a14 50%, #000000 100%);
+}
+
+.apresentacoes h2 {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 800;
+    background: linear-gradient(90deg, #ff8a00 0%, #e52e71 50%, #6a00ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 3rem;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    font-family: 'Poppins', sans-serif;
+}
+
+.apresentacoes h2::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #ff8a00, #e52e71);
+    margin: 1rem auto 0;
+    border-radius: 2px;
+}
+
+.lista-apresentacoes {
+    /* Forçar uma apresentação por linha */
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* Quando houver 3+ apresentações, aplicar scroll interno */
+.lista-apresentacoes.scrollable-list {
+    /* max-height é calculado dinamicamente por JS; aqui apenas estilos auxiliares */
+    overflow-y: auto;
+    padding-right: 12px; /* espaço para scrollbar */
+}
+
+/* estilo raso do scrollbar para navegadores baseados em WebKit */
+.lista-apresentacoes.scrollable-list::-webkit-scrollbar {
+    width: 10px;
+}
+.lista-apresentacoes.scrollable-list::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.02);
+    border-radius: 6px;
+}
+.lista-apresentacoes.scrollable-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(229,46,113,0.6), rgba(255,138,0,0.6));
+    border-radius: 6px;
+}
+
+/* Firefox scrollbar styling (modern) */
+.lista-apresentacoes.scrollable-list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(229,46,113,0.6) rgba(255,255,255,0.02);
+}
+
+/* Formulário de Admin */
+.admin-form {
+    max-width: 800px;
+    margin: 2rem auto 4rem;
+    padding: 2.5rem;
+    background: linear-gradient(135deg, rgba(20, 20, 30, 0.95) 0%, rgba(30, 15, 50, 0.95) 100%);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 138, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.admin-form h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #ff8a00 0%, #e52e71 50%, #6a00ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+}
+
+.form-grid {
+    display: grid;
+    gap: 2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+}
+
+.form-group input {
+    padding: 0.875rem 1rem;
+    border: 2px solid rgba(255, 138, 0, 0.3);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.form-group input:focus {
+    border-color: rgba(229, 46, 113, 0.8);    
+    box-shadow: 0 0 0 4px rgba(229, 46, 113, 0.1);
+    outline: none;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.form-group small {
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-top: -0.25rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 12px 28px;
+    background: linear-gradient(135deg, #ff8a00 0%, #e52e71 50%, #6a00ff 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 6px 24px rgba(229, 46, 113, 0.3);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: left 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(229, 46, 113, 0.4);
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-primary:active {
+    transform: translateY(-1px);
+}
+
+.btn-primary i {
+    font-size: 1.1rem;
+}
+
+.form-help {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #f1f5f9;
+}
+
+.form-help p {
+    color: #0052cc;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.form-help ul {
+    margin: 0;
+    padding-left: 2rem;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.form-help li {
+    margin-bottom: 0.5rem;
+}
+
+/* Cards de Apresentação */
+.apresentacao-card {
+    background: linear-gradient(135deg, rgba(20,20,30,0.9) 0%, rgba(30,15,50,0.9) 100%);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 1px rgba(229, 46, 113, 0.1);
+    border: 1px solid rgba(255, 138, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    display: block; /* single column card */
+    gap: 2rem;
+    align-items: stretch;
+    backdrop-filter: blur(10px);
+}
+
+.apresentacao-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 48px rgba(229, 46, 113, 0.25), 0 0 1px rgba(229, 46, 113, 0.15);
+    border-color: rgba(229, 46, 113, 0.4);
+}
+
+.status-apresentando {
+    position: absolute;
+    top: -14px;
+    right: 24px;
+    background: linear-gradient(135deg, #ff3648 0%, #ff6b81 100%);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.3);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.apresentacao-titulo {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #ff8a00 0%, #e52e71 50%, #6a00ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1.2rem;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.apresentacao-detalhes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.8rem;
+    color: rgba(243, 246, 251, 0.85);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.apresentacao-detalhes span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 500;
+}
+
+.apresentacao-detalhes i {
+    color: #ffe066;
+    font-size: 1.1rem;
+}
+
+.btn-assistir {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #ff8a00 0%, #e52e71 50%, #ff8a00 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 6px 24px rgba(229, 46, 113, 0.35);
+    white-space: nowrap;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-assistir::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: left 0.3s ease;
+}
+
+.btn-assistir:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 36px rgba(229, 46, 113, 0.5);
+}
+
+.btn-assistir:hover::before {
+    left: 100%;
+}
+
+.btn-assistir i {
+    font-size: 1.3rem;
+}
+
+/* Estilos compactos e modernos para botões de ação (editar / remover) */
+.btn-editar-apresentacao,
+.btn-remover-apresentacao {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+.btn-editar-apresentacao {
+    background: linear-gradient(90deg, #2ea4f6, #1b82d1);
+    color: #fff;
+}
+
+.btn-remover-apresentacao {
+    background: linear-gradient(90deg, #ff6b6b, #e53935);
+    color: #fff;
+}
+
+.btn-editar-apresentacao i,
+.btn-remover-apresentacao i {
+    font-size: 0.95rem;
+    opacity: 0.95;
+}
+
+.btn-editar-apresentacao .btn-label,
+.btn-remover-apresentacao .btn-label {
+    display: inline-block;
+}
+
+.btn-editar-apresentacao:hover,
+.btn-remover-apresentacao:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+}
+
+/* Tornar o botão principal de assistir um pouco mais compacto */
+.btn-assistir {
+    padding: 10px 22px;
+    font-size: 0.95rem;
+    border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+    .btn-editar-apresentacao,
+    .btn-remover-apresentacao {
+        padding: 8px 10px;
+        font-size: 0.88rem;
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .apresentacoes h2 {
+        font-size: 2.5rem;
+    }
+
+    .admin-form {
+        padding: 1.5rem;
+        margin: 1.5rem auto;
+    }
+
+    .apresentacao-card {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        gap: 1.5rem;
+        text-align: center;
+    }
+
+    .apresentacao-titulo {
+        font-size: 1.75rem;
+    }
+
+    .apresentacao-detalhes {
+        justify-content: center;
+    }
+
+    .btn-assistir {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .status-apresentando {
+        right: 50%;
+        transform: translateX(50%);
+    }
+}
+
+@media (max-width: 480px) {
+    .apresentacoes h2 {
+        font-size: 2rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .apresentacao-detalhes {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+/* Additional mobile polish for typography and layout (<=600px) */
+@media (max-width: 600px) {
+    .apresentacoes h2 {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .lista-apresentacoes {
+        padding: 0 12px;
+        gap: 12px;
+    }
+
+    .apresentacao-card {
+        padding: 12px 12px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+
+    .apresentacao-titulo {
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.15;
+    }
+
+    .apresentacao-detalhes {
+        gap: 0.6rem;
+        font-size: 0.95rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .status-badge {
+        font-size: 0.78rem;
+        padding: 5px 8px;
+    }
+
+    .badge-ao-vivo {
+        top: 8px;
+        right: 12px;
+        padding: 6px 10px;
+        font-size: 0.78rem;
+    }
+
+    /* Stack action buttons */
+    .apresentacao-card .controls,
+    .card-apresentacao .controls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+        align-items: stretch;
+    }
+
+    .btn-assistir,
+    .btn-editar-apresentacao,
+    .btn-remover-apresentacao {
+        width: 100% !important;
+        justify-content: center;
+    }
+
+    .btn-assistir { padding: 10px 12px; font-size: 0.95rem; }
+    .btn-editar-apresentacao, .btn-remover-apresentacao { padding: 8px 12px; }
+
+    /* prevent overflow of long titles */
+    .apresentacao-titulo { word-break: break-word; }
+}

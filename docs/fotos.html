@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boi Orgulho da Cidade - Fotos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="fotos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Ícones do site (favicon) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="logo.png">
+    <link rel="shortcut icon" href="logo.png" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <meta name="theme-color" content="#ff8a00">
+</head>
+<body>
+    <header class="main-header">
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <span class="logo-text">Galeria</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html"><i class="fas fa-home"></i> <span>Início</span></a></li>
+                    <li><a href="fotos.html" class="active"><i class="fas fa-images"></i> <span>Fotos</span></a></li>
+                    <li><a href="musicas.html"><i class="fas fa-music"></i> <span>Músicas</span></a></li>                    
+                    <li><a href="inscricao.html"><i class="fas fa-ticket-alt"></i> <span>Seletiva 2026</span></a></li>
+                    <li><a href="contato.html"><i class="fas fa-envelope"></i> <span>Contato</span></a></li>
+                    <li><a href="sobre.html"><i class="fas fa-info-circle"></i> <span>Sobre</span></a></li>
+                </ul>
+            </div>
+            <div class="nav-accent" aria-hidden="true"></div>
+        </nav>
+    </header>
+
+    <main class="gallery-content">
+                <div class="gallery-title-wrap" aria-hidden="false">
+                    <h1 class="gallery-title">Galeria de Fotos</h1>
+                    <div class="fireworks" aria-hidden="true">
+                        <!-- Firework 1 (left) -->
+                        <div class="firework fw1" style="left:8%">
+                            <span class="launch" aria-hidden="true"></span>
+                            <div class="burst" aria-hidden="true">
+                                <span class="spark" style="--tx:-60px;--ty:-120px;background:#ff3b30"></span>
+                                <span class="spark" style="--tx:18px;--ty:-130px;background:#ffd700"></span>
+                                <span class="spark" style="--tx:-12px;--ty:-140px;background:#34c759"></span>
+                                <span class="spark" style="--tx:36px;--ty:-110px;background:#0a84ff"></span>
+                                <span class="spark" style="--tx:-24px;--ty:-100px;background:#bf5af2"></span>
+                                <span class="spark" style="--tx:4px;--ty:-150px;background:#ffffff"></span>
+                            </div>
+                        </div>
+                        <!-- Firework 2 (center) -->
+                        <div class="firework fw2" style="left:50%">
+                            <span class="launch" aria-hidden="true"></span>
+                            <div class="burst" aria-hidden="true">
+                                <span class="spark" style="--tx:-34px;--ty:-110px;background:#ff4d4d"></span>
+                                <span class="spark" style="--tx:22px;--ty:-120px;background:#ffd24d"></span>
+                                <span class="spark" style="--tx:-8px;--ty:-130px;background:#4de08b"></span>
+                                <span class="spark" style="--tx:30px;--ty:-100px;background:#6fb7ff"></span>
+                                <span class="spark" style="--tx:-20px;--ty:-90px;background:#c27bff"></span>
+                                <span class="spark" style="--tx:8px;--ty:-140px;background:#fff4e0"></span>
+                            </div>
+                        </div>
+                        <!-- Firework 3 (right) -->
+                        <div class="firework fw3" style="left:92%">
+                            <span class="launch" aria-hidden="true"></span>
+                            <div class="burst" aria-hidden="true">
+                                <span class="spark" style="--tx:-28px;--ty:-100px;background:#ff6b6b"></span>
+                                <span class="spark" style="--tx:16px;--ty:-120px;background:#ffd86b"></span>
+                                <span class="spark" style="--tx:-6px;--ty:-110px;background:#8ef08a"></span>
+                                <span class="spark" style="--tx:24px;--ty:-90px;background:#9fc7ff"></span>
+                                <span class="spark" style="--tx:0px;--ty:-140px;background:#ffffff"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+        <!-- Control bar for add buttons -->
+        <div class="control-bar">
+            <button id="add-photo-server-main" title="Adicionar nova imagem (salva para todos)" class="btn-add-photo">+ Imagem</button>
+            <button id="add-story-btn" title="Adicionar nova categoria de bolinha" class="btn-add-story">+ Bolinha</button>
+            <!-- keep input in DOM but off-screen so programmatic click (user gesture) opens file picker reliably -->
+            <input id="server-file-input" type="file" accept="image/*,video/*" multiple style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+        </div>
+
+        <!-- Barra de stories / highlights -->
+        <div class="stories-container">
+            <button id="stories-prev" class="stories-nav stories-nav-prev" aria-label="Histórias anteriores">‹</button>
+            <div class="stories" id="stories">
+                <!-- stories serão renderizadas aqui -->
+            </div>
+            <button id="stories-next" class="stories-nav stories-nav-next" aria-label="Próximas histórias">›</button>
+        </div>
+
+        <div class="gallery" id="gallery">
+            <!-- As fotos serão carregadas aqui dinamicamente -->
+        </div>
+
+        <!-- Modal para visualização ampliada -->
+        <div id="media-modal" class="media-modal" aria-hidden="true">
+            <button class="modal-close" id="modal-close" aria-label="Fechar">×</button>
+            <div class="modal-content" id="modal-content"></div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Sobre Nós</h3>
+                <p>O Boi Orgulho da Cidade é uma manifestação cultural que celebra a tradição do bumba-meu-boi no Maranhão.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Links Rápidos</h3>
+                <ul class="footer-links">
+                    <li><a href="index.html">Início</a></li>
+                    <li><a href="fotos.html">Fotos</a></li>
+                    <li><a href="musicas.html">Músicas</a></li>                    
+                    <li><a href="inscricao.html">Seletiva 2026</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contato</h3>
+                <ul class="footer-links">
+                    <li>São Luís, MA</li>
+                    <li>Tel: (98) 9xxxx-xxxx</li>
+                    <li>Email: contato@boiorgulho.com.br</li>
+                </ul>
+                <div class="footer-social">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>                    
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Boi Orgulho da Cidade. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Menu inferior fixo (mobile) -->
+    <nav class="bottom-nav" aria-label="Menu inferior">
+        <ul class="bottom-links">
+            <li><a href="index.html"><i class="fas fa-home"></i><span>Início</span></a></li>
+            <li><a href="fotos.html" class="active"><i class="fas fa-images"></i><span>Fotos</span></a></li>
+            <li><a href="musicas.html"><i class="fas fa-music"></i><span>Músicas</span></a></li>            
+            <li><a href="inscricao.html"><i class="fas fa-ticket-alt"></i><span>Seletiva</span></a></li>
+            <li><a href="contato.html"><i class="fas fa-envelope"></i><span>Contato</span></a></li>
+            <li><a href="sobre.html"><i class="fas fa-info-circle"></i><span>Sobre</span></a></li>
+        </ul>
+    </nav>
+
+    <script src="fotos.js"></script>
+    <script src="loader.js"></script>
+    <script src="admin.js" defer></script>
+</body>
+</html>

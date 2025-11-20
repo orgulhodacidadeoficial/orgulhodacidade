@@ -5,56 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boi Orgulho da Cidade - Músicas</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="player.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Ícones do site (favicon) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="logo.png">
+    <link rel="shortcut icon" href="logo.png" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="logo.png">
+    <meta name="theme-color" content="#ff8a00">
 </head>
 <body>
     <header class="main-header">
         <nav class="main-nav">
-            <div class="nav-container">                
+            <div class="nav-container">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <span class="logo-text">Músicas</span>
+                </div>
                 <ul class="nav-links">
-                    <li><a href="index.html">Início</a></li>
-                    <li><a href="fotos.html">Fotos</a></li>
-                    <li><a href="musicas.html" class="active">Músicas</a></li>
-                    <li><a href="sobre.html">Sobre</a></li>
-                    <li><a href="inscricao.html">Seletiva 2026</a></li>
-                    <li><a href="contato.html">Contato</a></li>
+                    <li><a href="index.html"><i class="fas fa-home"></i> <span>Início</span></a></li>
+                    <li><a href="fotos.html"><i class="fas fa-images"></i> <span>Fotos</span></a></li>
+                    <li><a href="musicas.html" class="active"><i class="fas fa-music"></i> <span>Músicas</span></a></li>                   
+                    <li><a href="inscricao.html"><i class="fas fa-ticket-alt"></i> <span>Seletiva 2026</span></a></li>
+                    <li><a href="contato.html"><i class="fas fa-envelope"></i> <span>Contato</span></a></li>
+                    <li><a href="sobre.html"><i class="fas fa-info-circle"></i> <span>Sobre</span></a></li>
                 </ul>
-                <button class="mobile-menu" aria-label="Menu">☰</button>
             </div>
             <div class="nav-accent" aria-hidden="true"></div>
         </nav>
     </header>
 
     <main class="music-content">
-        <h1>Nossas Músicas</h1>
+        <div class="music-header-section">
+            <h1 class="music-title">🎵 Nossas Músicas</h1>
+            <p class="music-subtitle">Ouça as principais faixas do Boi Orgulho da Cidade</p>
+        </div>
 
-        <!-- Custom Audio Player (moved to appear between titles) -->
+        <!-- PLAYER PRINCIPAL -->
         <section class="audio-player-section">
             <div class="custom-audio-player">
-                <!-- Added a small cover area to the existing player. The structure reuses the
-                     existing `.player-info` and `.player-controls` classes but adds a
-                     `.player-cover` element to show artwork (keeps layout responsive).
-                     This change complements (doesn't replace) existing HTML/CSS. -->
                 <div class="player-top" style="display:flex;align-items:center;gap:16px;">
                     <div class="player-cover" aria-hidden="true"></div>
                     <div class="player-info">
-                    <div class="song-info">
-                        <span class="current-song-title">Selecione uma música</span>
-                        <span class="current-song-artist"></span>
-                    </div>
-                    <div class="player-progress">
-                        <div class="progress-bar">
-                            <div class="progress-current"></div>
+                        <div class="song-info">
+                            <span class="current-song-title">Selecione uma música</span>
+                            <span class="current-song-artist"></span>
                         </div>
-                        <div class="time-info">
-                            <span class="current-time">0:00</span>
-                            <span class="total-time">0:00</span>
+                        <div class="player-progress">
+                            <div class="progress-bar">
+                                <div class="progress-current"></div>
+                            </div>
+                            <div class="time-info">
+                                <span class="current-time">0:00</span>
+                                <span class="total-time">0:00</span>
+                            </div>
                         </div>
-                    </div>
                     </div>
                 </div>
-             <!-- Controls stay the same semantically but are visually enlarged via CSS
-                 so we keep behavior and accessibility and only change presentation. -->
-             <div class="player-controls">
+                <div class="player-controls">
                     <button class="control-btn previous" aria-label="Anterior">
                         <i class="fas fa-step-backward"></i>
                     </button>
@@ -63,6 +73,9 @@
                     </button>
                     <button class="control-btn next" aria-label="Próxima">
                         <i class="fas fa-step-forward"></i>
+                    </button>
+                    <button class="control-btn autoplay-btn" id="autoplayBtn" aria-label="Autoplay da playlist" title="Ativa/desativa autoplay da playlist" onclick="window.PlaylistManager.toggleAutoplay()">
+                        <i class="fas fa-repeat"></i>
                     </button>
                     <div class="volume-control">
                         <button class="control-btn volume" aria-label="Volume">
@@ -75,28 +88,118 @@
             </div>
         </section>
 
-        <!-- Plataforma de links para serviços de streaming -->
-        <section class="platform-links-section">
-            <h2>Ouça nas plataformas</h2>            
-            <div id="platformLinks" class="platform-links"></div>
+        <!-- NOSSAS MÚSICAS -->
+        <div class="music-list">
+            <!-- As músicas padrão serão carregadas dinamicamente aqui -->
+        </div>
+
+        <!-- Seção de Adicionar Música à Playlist (Apenas Admin) -->
+        <section class="add-music-section admin-only" style="display: none;">
+            <div class="add-music-container">
+                <h2 class="add-music-title">🎼 Adicionar Música à Playlist</h2>
+                <form id="addMusicForm" class="add-music-form">
+                    <div class="form-group">
+                        <label for="musicTitle">Título da Música *</label>
+                        <input type="text" id="musicTitle" placeholder="Ex: Pra Te Encantar" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="musicArtist">Artista *</label>
+                        <input type="text" id="musicArtist" placeholder="Ex: Orgulho da Cidade" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="musicFile">Arquivo de Áudio *</label>
+                        <input type="file" id="musicFile" accept="audio/*" required>
+                        <small>Formatos suportados: MP3, WAV, OGG, M4A</small>
+                    </div>
+
+                    <button type="submit" class="btn-add-music">
+                        <i class="fas fa-plus"></i> Adicionar à Playlist
+                    </button>
+                </form>
+            </div>
         </section>
 
-        <div class="music-list">
-            <!-- Adicione suas músicas aqui. Exemplo de estrutura: -->
-            <!-- 
-            <div class="music-item">
-                <div class="music-info">
-                    <h3>Nome da Música</h3>
-                    <p>Compositor: Nome do Compositor</p>
+        <!-- MINHA PLAYLIST -->
+        <section class="playlist-section">
+            <div class="playlist-header">
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <h2 class="playlist-title">🎵 Minha Playlist <span id="playlistCount" class="playlist-count">(0)</span></h2>
+                    <div id="syncStatus" class="sync-status connected">
+                        <span class="sync-indicator"></span>
+                        <span>Sincronizando</span>
+                    </div>
                 </div>
-                <audio controls>
-                    <source src="assets/audio/musica1.mp3" type="audio/mp3">
-                    Seu navegador não suporta o elemento de áudio.
-                </audio>
+                <button id="clearPlaylistBtn" class="btn-clear-playlist admin-only" style="display: none;" title="Limpar playlist">
+                    <i class="fas fa-trash"></i> Limpar
+                </button>
             </div>
-            -->
-        </div>
+
+            <div id="playlistContainer" class="playlist-container">
+                <div class="playlist-empty">
+                    <i class="fas fa-compact-disc"></i>
+                    <p>Sua playlist está vazia. Adicione músicas para começar!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- OUÇA NAS PLATAFORMAS -->
+        <section class="platform-links-section">
+            <h2 class="platforms-title">Ouça nas plataformas <i class="fas fa-chevron-down bounce-arrow"></i></h2>            
+            <div class="platform-links">
+                <div class="platform">
+                    <div class="platform-image">
+                        <img src="images/platforms/youtube.png" alt="YouTube" class="platform-icon">
+                    </div>
+                    <a href="https://www.youtube.com/playlist?list=OLAK5uy_mCYlX_bNA3kMvK6dWQn5Vbt35LkoOzuOQ" class="platform-button"><span>Ouvir na plataforma</span></a>
+                </div>
+                <div class="platform">
+                    <div class="platform-image">
+                        <img src="images/platforms/amazon-music.png" alt="Amazon Music" class="platform-icon">
+                    </div>
+                    <a href="https://music.amazon.com/albums/B0FXN4Y8PF?ref=dm_ff_amazonmusic_3p&tag=featurefmbr-20" class="platform-button"><span>Ouvir na plataforma</span></a>
+                </div>
+                <div class="platform">
+                    <div class="platform-image">
+                        <img src="images/platforms/youtube-music.png" alt="YouTube Music" class="platform-icon">
+                    </div>
+                    <a href="https://music.youtube.com/playlist?list=OLAK5uy_mCYlX_bNA3kMvK6dWQn5Vbt35LkoOzuOQ" class="platform-button"><span>Ouvir na plataforma</span></a>
+                </div>
+                <div class="platform">
+                    <div class="platform-image">
+                        <img src="images/platforms/apple-music.png" alt="Apple Music" class="platform-icon">
+                    </div>
+                    <a href="https://music.apple.com/br/album/boi-orgulho-da-cidade-gg-25-anos-de-orquestra-34/1848394608" class="platform-button"><span>Ouvir na plataforma</span></a>
+                </div>
+                <div class="platform">
+                    <div class="platform-image">
+                        <img src="images/platforms/deezer.png" alt="Deezer" class="platform-icon">
+                    </div>
+                    <a href="https://www.deezer.com/br/album/843836092" class="platform-button"><span>Ouvir na plataforma</span></a>
+                </div>
+                <div class="platform">
+                    <div class="platform-image">
+                        <img src="images/platforms/tidal.png" alt="Tidal" class="platform-icon">
+                    </div>
+                    <a href="https://tidal.com/album/469122137" class="platform-button"><span>Ouvir na plataforma</span></a>
+                </div>
+                <div class="platform">
+                    <div class="platform-image">
+                        <img src="images/platforms/anghami.png" alt="Anghami" class="platform-icon">
+                    </div>
+                    <a href="https://play.anghami.com/album/1076740965?refer=featurefm&ffm=FFM_2e4cd33af9c786d9b98a1582d7df48cf" class="platform-button"><span>Ouvir na plataforma</span></a>
+                </div>
+                <div class="platform">
+                    <div class="platform-image">
+                        <img src="images/platforms/spotify.png" alt="Spotify" class="platform-icon">
+                    </div>
+                    <a href="https://open.spotify.com/intl-pt/album/1SWPDocJ1r436uPXex41se?si=1&nd=1&dlsi=a22401c438544f44" class="platform-button"><span>Ouvir na plataforma</span></a>
+                </div>
+            </div>
+        </section>
     </main>
+
     <footer class="main-footer">
         <div class="footer-content">
             <div class="footer-section">
@@ -108,10 +211,10 @@
                 <ul class="footer-links">
                     <li><a href="index.html">Início</a></li>
                     <li><a href="fotos.html">Fotos</a></li>
-                    <li><a href="musicas.html">Músicas</a></li>
-                    <li><a href="sobre.html">Sobre</a></li>
+                    <li><a href="musicas.html">Músicas</a></li>                    
                     <li><a href="inscricao.html">Seletiva 2026</a></li>
                     <li><a href="contato.html">Contato</a></li>
+                    <li><a href="sobre.html">Sobre</a></li>
                 </ul>
             </div>
             <div class="footer-section">
@@ -123,8 +226,7 @@
                 </ul>
                 <div class="footer-social">
                     <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>                    
                 </div>
             </div>
         </div>
@@ -133,355 +235,21 @@
         </div>
     </footer>
 
-    <!-- Font Awesome para ícones de redes sociais -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="script.js"></script>
-    <script>
-        // Edit the links below directly in the code (this is what you requested):
-        const PLATFORM_LINKS = {
-            youtube: 'https://www.youtube.com/playlist?list=OLAK5uy_mCYlX_bNA3kMvK6dWQn5Vbt35LkoOzuOQ',
-            amazon: 'https://music.amazon.com/albums/B0FXN4Y8PF?ref=dm_ff_amazonmusic_3p&tag=featurefmbr-20',
-            youtubemusic: 'https://music.youtube.com/playlist?list=OLAK5uy_mCYlX_bNA3kMvK6dWQn5Vbt35LkoOzuOQ',
-            apple: 'https://music.apple.com/br/album/boi-orgulho-da-cidade-gg-25-anos-de-orquestra-34/1848394608',
-            deezer: 'https://www.deezer.com/br/album/843836092',
-            tidal: 'https://tidal.com/album/469122137',
-            boomplay: '',
-            anghami: 'https://play.anghami.com/album/1076740965?refer=featurefm&ffm=FFM_75483b6408f277081748186c8cdd78c1',
-            itunes: 'https://music.apple.com/br/album/boi-orgulho-da-cidade-gg-25-anos-de-orquestra-34/1848394608',
-            spotify: 'https://open.spotify.com/intl-pt/album/1SWPDocJ1r436uPXex41se?si=1&nd=1&dlsi=1f87a167bbe3450b'
-        };
+    <!-- Menu inferior fixo (mobile) -->
+    <nav class="bottom-nav" aria-label="Menu inferior">
+        <ul class="bottom-links">
+            <li><a href="index.html"><i class="fas fa-home"></i><span>Início</span></a></li>
+            <li><a href="fotos.html"><i class="fas fa-images"></i><span>Fotos</span></a></li>
+            <li><a href="musicas.html" class="active"><i class="fas fa-music"></i><span>Músicas</span></a></li>            
+            <li><a href="inscricao.html"><i class="fas fa-ticket-alt"></i><span>Seletiva</span></a></li>
+            <li><a href="contato.html"><i class="fas fa-envelope"></i><span>Contato</span></a></li>
+            <li><a href="sobre.html"><i class="fas fa-info-circle"></i><span>Sobre</span></a></li>
+        </ul>
+    </nav>
 
-        // Platform icons paths
-        const PLATFORM_ICONS = {
-            youtube: 'images/platforms/youtube.png',
-            amazon: 'images/platforms/amazon-music.png',
-            youtubemusic: 'images/platforms/youtube-music.png',
-            apple: 'images/platforms/apple-music.png',
-            deezer: 'images/platforms/deezer.png',
-            tidal: 'images/platforms/tidal.png',
-            //boomplay: 'images/platforms/boomplay.png',
-            anghami: 'images/platforms/anghami.png',
-            //itunes: 'images/platforms/itunes.png',
-            spotify: 'images/platforms/spotify.png'
-        };
-
-        // Platforms metadata (icons/classes)
-        const PLATFORMS = [
-            { key: 'youtube', label: 'YouTube', icon: '' },
-            { key: 'amazon', label: 'Amazon', icon: '' },
-            { key: 'youtubemusic', label: 'YouTube Music', icon: '' },
-            { key: 'apple', label: 'Apple Music', icon: '' },
-            { key: 'deezer', label: 'Deezer', icon: '' },
-            { key: 'tidal', label: 'Tidal', icon: '' },
-          //  { key: 'boomplay', label: 'Boomplay', icon: '' },
-            { key: 'anghami', label: 'Anghami', icon: '' },
-           // { key: 'itunes', label: 'iTunes', icon: '' },
-            { key: 'spotify', label: 'Spotify', icon: '' }
-        ];
-
-    // Platforms that should NOT display the text label under the icon.
-    // Edit this array to add or remove platform keys (e.g. 'youtube', 'deezer').
-    // Added amazon, tidal, anghami, spotify, apple per user request.
-    const HIDE_LABELS = ['youtube', 'deezer', 'youtubemusic', 'amazon', 'tidal', 'anghami', 'spotify', 'apple'];
-
-        function renderPlatformLinks() {
-            const container = document.getElementById('platformLinks');
-            if (!container) return;
-            container.innerHTML = '';
-
-            PLATFORMS.forEach(p => {
-                const wrap = document.createElement('div');
-                wrap.className = 'platform';
-
-                const a = document.createElement('a');
-                const url = PLATFORM_LINKS[p.key] || '';
-                a.href = url || '#';
-                a.target = '_blank';
-                a.rel = 'noopener noreferrer';
-                a.className = 'platform-link';
-                // if this platform hides its label, mark the anchor so CSS can expand the image
-                const hideLabelForThis = HIDE_LABELS.includes('all') || HIDE_LABELS.includes(p.key);
-                if (hideLabelForThis) a.classList.add('no-label');
-                a.title = p.label;
-
-                // icon container: prefer PLATFORM_ICONS image when provided,
-                // otherwise use font-awesome icon or initial as fallback
-                const iconWrap = document.createElement('span');
-                iconWrap.className = 'platform-icon-wrap';
-                const iconPath = PLATFORM_ICONS[p.key] || '';
-                if (iconPath) {
-                    const img = document.createElement('img');
-                    img.src = iconPath;
-                    img.alt = p.label + ' icon';
-                    img.className = 'platform-icon-img';
-                    // if a specific platform needs full-image display (no crop), add a contain class
-                    if (p.key === 'deezer') {
-                        img.classList.add('platform-icon-img--contain');
-                    }
-                    iconWrap.appendChild(img);
-                } else if (p.icon) {
-                    const i = document.createElement('i');
-                    i.className = p.icon + ' platform-icon';
-                    iconWrap.appendChild(i);
-                } else {
-                    const svgPlaceholder = document.createElement('span');
-                    svgPlaceholder.className = 'platform-icon platform-icon--text';
-                    svgPlaceholder.textContent = p.label.charAt(0);
-                    iconWrap.appendChild(svgPlaceholder);
-                }
-
-                a.appendChild(iconWrap);
-
-                // add label (platform name) below the image, unless hidden for this platform
-                if (!HIDE_LABELS.includes(p.key)) {
-                    const lbl = document.createElement('span');
-                    lbl.className = 'platform-label';
-                    lbl.textContent = p.label;
-                    a.appendChild(lbl);
-                }
-
-                // add small CTA text under the label
-                const cta = document.createElement('span');
-                cta.className = 'platform-cta';
-                // CTA text updated to match requested copy: 'Ouvir na plataforma'
-                cta.textContent = 'Ouvir na plataforma';
-                a.appendChild(cta);
-
-                if (!url) {
-                    a.addEventListener('click', (ev) => { ev.preventDefault(); alert('Link não definido para ' + p.label + '. Edite a variável PLATFORM_LINKS no arquivo musics.html para adicionar.'); });
-                }
-
-                wrap.appendChild(a);
-                container.appendChild(wrap);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            renderPlatformLinks();
-        });
-    </script>
-    <style>
-        /* =========================
-           Ajustes finos do layout da página de músicas
-           - Apenas ajustes nas classes existentes (sem criar novas)
-           - Centraliza e melhora proporção do player
-           - Torna a grade de plataformas mais fluida e consistente
-           - Mantém esquema de cores e comportamento anterior
-           ========================= */
-
-        /* ---------- TÍTULO ---------- */
-        .music-content h1 {
-            display: block;
-            margin: 8px auto 12px auto; /* mantém centralização */
-            text-align: center;
-            font-size: 2.6rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            line-height: 1.05;
-            background: linear-gradient(90deg,#d93a58 0%, #f6d743 70%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 4px 18px rgba(11,58,145,0.06);
-        }
-        .music-content h1::before {
-            content: '♪';
-            display: inline-block;
-            margin-right: 0.5rem;
-            color: #f6d743;
-            font-size: 0.95em;
-            vertical-align: middle;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
-        }
-
-        /* ---------- PLAYER (centralizado e proporcional) ---------- */
-        .custom-audio-player {
-            /* aumentamos levemente a largura máxima para ocupar melhor o container */
-            max-width: 880px;
-            width: calc(100% - 40px); /* mantém alguma folga nas laterais */
-            margin: 0 auto;
-            background: linear-gradient(180deg, rgba(26,26,26,0.94), rgba(0,0,0,0.94));
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 30px rgba(11,58,145,0.06);
-            border: 1px solid rgba(255,255,255,0.03);
-            box-sizing: border-box;
-        }
-
-        /* alinhamento da capa e do texto: o bloco de texto fica alinhado verticalmente com a capa */
-        .player-top { display:flex; align-items:center; gap:18px; }
-        .player-cover { width: 120px; height: 120px; border-radius: 10px; overflow:hidden; flex:0 0 120px; }
-        .player-cover img { width:100%; height:100%; object-fit:cover; display:block; }
-
-        /* Faz com que a coluna de informação ocupe o espaço restante e centralize conteúdo */
-        .player-info { flex: 1 1 auto; display:flex; flex-direction:column; justify-content:center; }
-        .song-info { text-align:left; }
-        .song-info .current-song-title { font-size:1.15rem; font-weight:700; color:#fff; }
-        .song-info .current-song-artist { font-size:0.95rem; color:#ccc; }
-
-        /* controles e espaçamento interno para aparência equilibrada */
-        .player-controls { display:flex; align-items:center; justify-content:center; gap:1rem; margin-top:8px; }
-        .control-btn { width:48px; height:48px; border-radius:8px; transition: transform .12s ease; }
-        .control-btn:hover { transform: translateY(-3px); }
-
-        /* barra de progresso mais visível (mantendo estrutura) */
-        .progress-bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow:hidden; }
-        .progress-current { height:100%; border-radius:999px; transition: width 0.12s linear; background: linear-gradient(90deg,#ff6b6b,#0b3a91); }
-
-        /* ---------- PLATAFORMAS: grid com alinhamento preciso ---------- */
-        .platform-links-section { 
-            padding: 48px 0 32px 0; 
-            max-width: 1200px; 
-            margin: 0 auto; 
-        }
-        .platform-links {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 20px;
-            margin: 24px auto;
-            padding: 0 20px;
-            align-items: start;
-        }
-
-        /* breakpoints otimizados para melhor visualização */
-        @media (max-width: 1024px) {
-            .platform-links { 
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 20px;
-                padding: 0 24px;
-            }
-            .platform-link {
-                height: 190px;
-            }
-        }
-        @media (max-width: 768px) {
-            .platform-links { 
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 16px;
-                padding: 0 20px;
-            }
-            .platform-link {
-                height: 180px;
-            }
-        }
-        @media (max-width: 480px) {
-            .platform-links { 
-                grid-template-columns: repeat(1, minmax(0, 1fr));
-                gap: 16px;
-                padding: 0 16px;
-            }
-            .platform-link {
-                height: 170px;
-            }
-        }
-
-        /* Cards com altura fixa e espaçamento consistente */
-        .platform-link { 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 200px;
-            padding: 0;
-            border-radius: 12px;
-            background: #fff;
-            border: 1px solid rgba(0,0,0,0.08);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            transition: all .25s ease;
-            text-decoration: none !important;
-            overflow: hidden;
-        }
-        .platform-link:hover { 
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            border-color: rgba(0,0,0,0.12);
-        }
-
-        /* área de logo com proporção fixa e alinhamento perfeito */
-        .platform-icon-wrap { 
-            width: 100%;
-            height: 160px; /* aumentei altura para melhor visual em tablets/mobiles */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #fff;
-            padding: 16px;
-            box-sizing: border-box;
-            margin-bottom: 8px;
-            overflow: hidden;
-        }
-        .platform-icon-img { 
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform .25s ease;
-        }
-        /* Use this modifier for images that should not be cropped (e.g., Deezer) */
-        .platform-icon-img--contain {
-            object-fit: contain;
-            background: transparent;
-        }
-        .platform-link:hover .platform-icon-img { 
-            transform: scale(1.05);
-        }
-
-        /* Label e CTA alinhados abaixo da logo */
-        .platform-label { 
-            text-align: center;
-            font-size: 14px;
-            color: #0b3a91;
-            font-weight: 600;
-            margin: 4px 0 4px;
-        }
-        .platform-cta { 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: calc(100% - 32px);
-            height: 40px;
-            font-size: 13px;
-            color: #fff;
-            background: #0b3a91;
-            margin: 8px 16px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all .25s ease;
-            text-decoration: none;
-        }
-        .platform-link:hover .platform-cta {
-            background: #0d44aa;
-            transform: translateY(-2px);
-        }
-
-        /* Garante que todo conteúdo respeite o container principal */
-        .music-content { max-width:1100px; margin:0 auto 24px; padding:48px 20px 0 20px; box-sizing: border-box; }
-
-        /* Responsividade do player: ocupar mais espaço em telas maiores e ajustar em mobiles */
-        @media (min-width: 1200px) {
-            .custom-audio-player { width: 100%; max-width: 1000px; }
-            .player-cover { width: 140px; height: 140px; flex: 0 0 140px; }
-        }
-        @media (max-width: 1024px) {
-            .music-content h1 { font-size:2.1rem; }
-            .custom-audio-player { max-width:840px; padding:1.25rem; }
-            .player-cover { width: 120px; height: 120px; flex: 0 0 120px; }
-            .player-top { gap:14px; }
-            .platform-icon-wrap { height: 180px; }
-            .platform-icon-img { max-width:220px; max-height:120px; }
-        }
-        @media (max-width: 768px) {
-            .music-content h1 { font-size:1.8rem; }
-            .custom-audio-player { max-width:720px; padding:1rem; }
-            .player-top { flex-direction:column; align-items:center; }
-            .player-info { align-items:center; text-align:center; }
-            .song-info { text-align:center; }
-            .player-cover { width:96px; height:96px; flex: 0 0 96px; }
-            .platform-icon-wrap { height:160px; }
-            .platform-icon-img { max-width:180px; max-height:96px; }
-        }
-        @media (max-width: 480px) {
-            .platform-icon-wrap { height:140px; }
-            .platform-icon-img { max-width:140px; max-height:80px; }
-        }
-    </style>
+    <script src="loader.js"></script>
+    <script src="player.js" defer></script>
+    <script src="playlist.js" defer></script>
+    <script src="admin.js" defer></script>
 </body>
 </html>

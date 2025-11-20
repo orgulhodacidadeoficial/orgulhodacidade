@@ -1,0 +1,45 @@
+{
+  "musics": [
+    {
+      "id": 1763367458015,
+      "title": "PRA TE ENCANTAR",
+      "artist": "Orgulho da cidade",
+      "fileName": "01 PRA TE ENCANTAR.mp3",
+      "addedAt": "2025-11-17T08:17:38.015Z",
+      "serverUrl": "/uploads/1763367458037-01PRATEENCANTAR.mp3"
+    },
+    {
+      "id": 1763367484280,
+      "title": "LÁGRIMAS DE SAUDADE",
+      "artist": "Orgulho da cidade",
+      "fileName": "02 LAGRIMAS DE SAUDADE.mp3",
+      "addedAt": "2025-11-17T08:18:04.280Z",
+      "serverUrl": "/uploads/1763367484286-02LAGRIMASDESAUDADE.mp3"
+    },
+    {
+      "id": 1763367511739,
+      "title": "PROMESSA",
+      "artist": "Orgulho da cidade",
+      "fileName": "03 PROMESSA.mp3",
+      "addedAt": "2025-11-17T08:18:31.739Z",
+      "serverUrl": "/uploads/1763367511746-03PROMESSA.mp3"
+    },
+    {
+      "id": 1763367536111,
+      "title": "GUERREIRO",
+      "artist": "Orgulho da cidade",
+      "fileName": "04 GUERREIRO.mp3",
+      "addedAt": "2025-11-17T08:18:56.111Z",
+      "serverUrl": "/uploads/1763367536116-04GUERREIRO.mp3"
+    },
+    {
+      "id": 1763367550713,
+      "title": "MORENA",
+      "artist": "Orgulho da cidade",
+      "fileName": "05 MORENA.mp3",
+      "addedAt": "2025-11-17T08:19:10.713Z",
+      "serverUrl": "/uploads/1763367550719-05MORENA.mp3"
+    }
+  ],
+  "lastUpdated": "2025-11-17T08:19:10.877Z"
+}

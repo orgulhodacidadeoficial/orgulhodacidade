@@ -1,14 +1,31 @@
 {
   "name": "chinezlanches-site-dev",
   "version": "1.0.0",
-  "description": "Local dev server for Frontend folder with simple events.json update API",
-  "main": "server.js",
+  "description": "Website official do Boi Orgulho da Cidade",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "resize-banners": "node scripts/resize-banners.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-session": "^1.17.3",
+    "multer": "^1.4.5-lts.1",
     "node-fetch": "^2.6.7",
-    "ws": "^8.13.0"
-  }
+    "sharp": "^0.32.3",
+    "ws": "^8.18.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orgulhodacidade2/orgulhodacidade.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/orgulhodacidade2/orgulhodacidade/issues"
+  },
+  "homepage": "https://github.com/orgulhodacidade2/orgulhodacidade#readme"
 }

@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const indicatorsContainer = document.querySelector('.carousel-indicators');
 
     // Configurável: número de slides visíveis (4 conforme solicitado)
-    const VISIBLE = 4;
+    const VISIBLE = 5;
     let isAnimating = false;
 
     if (!track) return;
