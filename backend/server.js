@@ -460,34 +460,71 @@ function gerarNomeVisitante() {
 }
 
 // Owner endpoints removed: owner-login and verify-owner-code are no longer used
-// Funções para SQLite
+// Funções para SQLite e JSON
+const DATA_DIR = path.join(__dirname, '..', 'data');
+
 async function appendToJson(tableName, entry) {
-  const dataJson = JSON.stringify(entry);
-  const receivedAt = entry.receivedAt || Date.now();
-  const ip = entry.ip || 'unknown';
-  
-  await dbRun(
-    `INSERT INTO ${tableName} (data, receivedAt, ip) VALUES (?, ?, ?)`,
-    [dataJson, receivedAt, ip]
-  );
+  // Para tabelas SQLite (inscricoes, contatos, contratacoes, users)
+  if (['inscricoes', 'contatos', 'contratacoes', 'users'].includes(tableName)) {
+    const dataJson = JSON.stringify(entry);
+    const receivedAt = entry.receivedAt || Date.now();
+    const ip = entry.ip || 'unknown';
+    
+    await dbRun(
+      `INSERT INTO ${tableName} (data, receivedAt, ip) VALUES (?, ?, ?)`,
+      [dataJson, receivedAt, ip]
+    );
+  } else {
+    // Para tabelas JSON (photos, stories, events)
+    const filePath = path.join(DATA_DIR, tableName + '.json');
+    let arr = [];
+    try {
+      const raw = await fsPromises.readFile(filePath, 'utf8');
+      arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) arr = [];
+    } catch (e) {
+      arr = [];
+    }
+    arr.push(entry);
+    await fsPromises.writeFile(filePath, JSON.stringify(arr, null, 2), 'utf8');
+  }
 }
 
 async function readJson(tableName) {
-  const rows = await dbAll(`SELECT data FROM ${tableName} ORDER BY id DESC`);
-  return rows.map(row => {
+  // Para tabelas SQLite (inscricoes, contatos, contratacoes, users)
+  if (['inscricoes', 'contatos', 'contratacoes', 'users'].includes(tableName)) {
+    const rows = await dbAll(`SELECT data FROM ${tableName} ORDER BY id DESC`);
+    return rows.map(row => {
+      try {
+        return JSON.parse(row.data);
+      } catch {
+        return row.data;
+      }
+    });
+  } else {
+    // Para tabelas JSON (photos, stories, events)
+    const filePath = path.join(DATA_DIR, tableName + '.json');
     try {
-      return JSON.parse(row.data);
-    } catch {
-      return row.data;
+      const raw = await fsPromises.readFile(filePath, 'utf8');
+      return JSON.parse(raw) || [];
+    } catch (e) {
+      return [];
     }
-  });
+  }
 }
 
 async function writeJson(tableName, arr) {
-  // Delete all and insert new
-  await dbRun(`DELETE FROM ${tableName}`);
-  for (const entry of arr) {
-    await appendToJson(tableName, entry);
+  // Para tabelas SQLite (inscricoes, contatos, contratacoes, users)
+  if (['inscricoes', 'contatos', 'contratacoes', 'users'].includes(tableName)) {
+    // Delete all and insert new
+    await dbRun(`DELETE FROM ${tableName}`);
+    for (const entry of arr) {
+      await appendToJson(tableName, entry);
+    }
+  } else {
+    // Para tabelas JSON (photos, stories, events)
+    const filePath = path.join(DATA_DIR, tableName + '.json');
+    await fsPromises.writeFile(filePath, JSON.stringify(Array.isArray(arr) ? arr : [], null, 2), 'utf8');
   }
 }
 
@@ -636,7 +673,7 @@ app.post('/api/inscricao', async (req, res) => {
       receivedAt: Date.now(),
       ip: req.ip,
     });
-    await appendToJson('inscricoes.json', entry);
+    await appendToJson('inscricoes', entry);
     res.json({ ok: true });
   } catch (err) {
     console.error('inscricao error', err);
@@ -650,7 +687,7 @@ app.post('/api/contato', async (req, res) => {
       receivedAt: Date.now(),
       ip: req.ip,
     });
-    await appendToJson('contatos.json', entry);
+    await appendToJson('contatos', entry);
     res.json({ ok: true });
   } catch (err) {
     console.error('contato error', err);
@@ -664,7 +701,7 @@ app.post('/api/contratacao', async (req, res) => {
       receivedAt: Date.now(),
       ip: req.ip,
     });
-    await appendToJson('contratacoes.json', entry);
+    await appendToJson('contratacoes', entry);
     res.json({ ok: true });
   } catch (err) {
     console.error('contratacao error', err);
@@ -717,7 +754,7 @@ function requireAdmin(req, res, next) {
 // Admin API: expose JSON data and destructive operations used by the admin UI
 app.get('/api/admin/inscricoes', requireAdmin, async (req, res) => {
   try {
-    const data = await readJson('inscricoes.json');
+    const data = await readJson('inscricoes');
     return res.json(data);
   } catch (err) {
     console.error('GET inscricoes error', err);
@@ -727,7 +764,7 @@ app.get('/api/admin/inscricoes', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/contatos', requireAdmin, async (req, res) => {
   try {
-    const data = await readJson('contatos.json');
+    const data = await readJson('contatos');
     return res.json(data);
   } catch (err) {
     console.error('GET contatos error', err);
@@ -737,7 +774,7 @@ app.get('/api/admin/contatos', requireAdmin, async (req, res) => {
 
 app.get('/api/admin/contratacoes', requireAdmin, async (req, res) => {
   try {
-    const data = await readJson('contratacoes.json');
+    const data = await readJson('contratacoes');
     return res.json(data);
   } catch (err) {
     console.error('GET contratacoes error', err);
@@ -749,10 +786,10 @@ app.get('/api/admin/contratacoes', requireAdmin, async (req, res) => {
 app.post('/api/admin/inscricoes/delete', requireAdmin, async (req, res) => {
   try {
     const idx = Number(req.body && req.body.index);
-    const arr = await readJson('inscricoes.json');
+    const arr = await readJson('inscricoes');
     if (!Number.isInteger(idx) || idx < 0 || idx >= arr.length) return res.status(400).json({ error: 'Índice inválido' });
     arr.splice(idx, 1);
-    await writeJson('inscricoes.json', arr);
+    await writeJson('inscricoes', arr);
     return res.json({ ok: true });
   } catch (err) {
     console.error('delete inscricoes error', err);
@@ -763,7 +800,7 @@ app.post('/api/admin/inscricoes/delete', requireAdmin, async (req, res) => {
 // Clear all contatos
 app.post('/api/admin/contatos/clear', requireAdmin, async (req, res) => {
   try {
-    await writeJson('contatos.json', []);
+    await writeJson('contatos', []);
     return res.json({ ok: true });
   } catch (err) {
     console.error('clear contatos error', err);
@@ -775,10 +812,10 @@ app.post('/api/admin/contatos/clear', requireAdmin, async (req, res) => {
 app.post('/api/admin/contratacoes/delete', requireAdmin, async (req, res) => {
   try {
     const idx = Number(req.body && req.body.index);
-    const arr = await readJson('contratacoes.json');
+    const arr = await readJson('contratacoes');
     if (!Number.isInteger(idx) || idx < 0 || idx >= arr.length) return res.status(400).json({ error: 'Índice inválido' });
     arr.splice(idx, 1);
-    await writeJson('contratacoes.json', arr);
+    await writeJson('contratacoes', arr);
     return res.json({ ok: true });
   } catch (err) {
     console.error('delete contratacoes error', err);
@@ -811,7 +848,7 @@ app.get('/admin', requireAdmin, (req, res) => {
 // GET /api/events - Carrega os eventos (público)
 app.get('/api/events', async (req, res) => {
   try {
-    const events = await readJson('events.json');
+    const events = await readJson('events');
     return res.json(events || []);
   } catch (err) {
     console.error('Erro carregando events.json:', err);
@@ -822,7 +859,7 @@ app.get('/api/events', async (req, res) => {
 // Compatibilidade (PT-BR): GET /api/eventos
 app.get('/api/eventos', async (req, res) => {
   try {
-    const events = await readJson('events.json');
+    const events = await readJson('events');
     return res.json(events || []);
   } catch (err) {
     console.error('Erro carregando events.json (alias /api/eventos):', err);
@@ -844,7 +881,7 @@ app.get('/api/photos', async (req, res) => {
 // Compatibilidade (PT-BR): GET /api/fotos
 app.get('/api/fotos', async (req, res) => {
   try {
-    const photos = await readJson('photos.json');
+    const photos = await readJson('photos');
     return res.json(photos || []);
   } catch (err) {
     console.error('GET /api/fotos error (alias):', err);
@@ -855,7 +892,7 @@ app.get('/api/fotos', async (req, res) => {
 // GET /api/brincantes - retorna brincantes (categoria='brincantes' em photos.json) - PÚBLICO
 app.get('/api/brincantes', async (req, res) => {
   try {
-    const photos = await readJson('photos.json');
+    const photos = await readJson('photos');
     // include both legacy 'brincantes' and the new 'carrossel-brincantes' category
     const brincantes = Array.isArray(photos) ? photos.filter(p => (p.categoria === 'brincantes' || p.categoria === 'carrossel-brincantes')) : [];
     return res.json(brincantes);
@@ -868,7 +905,7 @@ app.get('/api/brincantes', async (req, res) => {
 // GET /api/historias - retorna stories.json (público) - compatibilidade PT-BR
 app.get('/api/historias', async (req, res) => {
   try {
-    const stories = await readJson('stories.json');
+    const stories = await readJson('stories');
     return res.json(stories || []);
   } catch (err) {
     console.error('GET /api/historias error:', err);
@@ -881,7 +918,7 @@ app.post('/api/brincantes/delete', requireAdmin, async (req, res) => {
   try {
     const src = req.body && req.body.src ? String(req.body.src) : null;
     if (!src) return res.status(400).json({ error: 'src obrigatório' });
-    const photos = await readJson('photos.json');
+    const photos = await readJson('photos');
     // normalize src param: handle absolute URLs, leading slashes, or relative paths
     function normalizeSrcParam(s){
       if(!s) return s;
@@ -913,9 +950,9 @@ app.post('/api/brincantes/delete', requireAdmin, async (req, res) => {
       }
     }
 
-    // write photos.json without the removed entries
+    // write photos without the removed entries
     const remaining = photos.filter(p => !toRemove.some(r => r === p || r.src === p.src));
-    await writeJson('photos.json', remaining);
+    await writeJson('photos', remaining);
     try { broadcast({ type: 'brincantesUpdated', count: remaining.filter(p => (p.categoria === 'brincantes' || p.categoria === 'carrossel-brincantes')).length }); } catch (e) {}
     return res.json({ ok: true });
   } catch (err) {
@@ -932,7 +969,7 @@ app.post('/api/photos', requireAdmin, async (req, res) => {
     if (!Array.isArray(arr)) return res.status(400).json({ error: 'Esperado um array de fotos' });
     // ensure basic shape
     const safe = arr.map(item => ({ src: item.src || '', name: item.name || '', role: item.role || '', categoria: item.categoria || 'brincantes' }));
-    await writeJson('photos.json', safe);
+    await writeJson('photos', safe);
     try { broadcast({ type: 'brincantesUpdated', count: safe.filter(p => (p.categoria === 'brincantes' || p.categoria === 'carrossel-brincantes')).length }); } catch (e) {}
     try { broadcast({ type: 'photosUpdated', count: safe.length }); } catch (e) {}
     return res.json({ ok: true });
@@ -946,7 +983,7 @@ app.post('/api/photos', requireAdmin, async (req, res) => {
 // GET /api/carousel-titulo/list - retorna imagens do carousel de títulos (categoria='titulo')
 app.get('/api/carousel-titulo/list', async (req, res) => {
   try {
-    const photos = await readJson('photos.json');
+    const photos = await readJson('photos');
     const carouselImages = Array.isArray(photos) ? photos.filter(p => p.categoria === 'titulo') : [];
     return res.json(carouselImages);
   } catch (err) {
@@ -960,7 +997,7 @@ app.post('/api/carousel-titulo/delete', requireAdmin, async (req, res) => {
   try {
     const src = req.body && req.body.src ? String(req.body.src) : null;
     if (!src) return res.status(400).json({ error: 'src obrigatório' });
-    const photos = await readJson('photos.json');
+    const photos = await readJson('photos');
     const filtered = photos.filter(p => p.src !== src);
     if (filtered.length === photos.length) return res.status(404).json({ error: 'imagem_nao_encontrada' });
     
@@ -972,7 +1009,7 @@ app.post('/api/carousel-titulo/delete', requireAdmin, async (req, res) => {
       console.warn('Could not delete file:', e.message);
     }
     
-    await writeJson('photos.json', filtered);
+    await writeJson('photos', filtered);
     // notify SSE clients
     try { sendSseEvent('carousel-update', { type: 'delete', src }); } catch (e) {}
     return res.json({ ok: true });
@@ -987,7 +1024,7 @@ app.post('/api/photos/delete', requireAdmin, async (req, res) => {
   try {
     const src = req.body && req.body.src ? String(req.body.src) : null;
     if (!src) return res.status(400).json({ error: 'src obrigatório' });
-    const photos = await readJson('photos.json');
+    const photos = await readJson('photos');
     const filtered = photos.filter(p => p.src !== src);
     if (filtered.length === photos.length) return res.status(404).json({ error: 'imagem_nao_encontrada' });
     
@@ -999,7 +1036,7 @@ app.post('/api/photos/delete', requireAdmin, async (req, res) => {
       console.warn('Could not delete photo file:', e.message);
     }
     
-    await writeJson('photos.json', filtered);
+    await writeJson('photos', filtered);
     // notify all SSE clients in realtime
     try { sendSseEvent('photos-update', { type: 'delete', src }); } catch (e) {}
     return res.json({ ok: true });
@@ -1014,7 +1051,7 @@ app.post('/api/delete-story', requireAdmin, async (req, res) => {
   try {
     const title = req.body && req.body.title ? String(req.body.title) : null;
     if (!title) return res.status(400).json({ error: 'title obrigatório' });
-    const stories = await readJson('stories.json');
+    const stories = await readJson('stories');
     const filtered = stories.filter(s => (s.categoria || s.title) !== title);
     if (filtered.length === stories.length) return res.status(404).json({ error: 'categoria_nao_encontrada' });
     
@@ -1036,12 +1073,12 @@ app.post('/api/delete-story', requireAdmin, async (req, res) => {
       console.warn('Could not delete story folder:', e.message);
     }
 
-    // Remover todas as fotos dessa categoria de photos.json também
-    const photos = await readJson('photos.json');
+    // Remover todas as fotos dessa categoria de photos também
+    const photos = await readJson('photos');
     const photosFiltered = photos.filter(p => p.categoria !== title);
-    await writeJson('photos.json', photosFiltered);
+    await writeJson('photos', photosFiltered);
     
-    await writeJson('stories.json', filtered);
+    await writeJson('stories', filtered);
     // notify all SSE clients in realtime
     try { sendSseEvent('stories-update', { type: 'delete', title }); } catch (e) {}
     return res.json({ ok: true });
@@ -1057,7 +1094,7 @@ app.post('/api/events', async (req, res) => {
     // Accept either an array in the body or { events: [...] }
     const arr = Array.isArray(req.body) ? req.body : (req.body && Array.isArray(req.body.events) ? req.body.events : null);
     if (!Array.isArray(arr)) return res.status(400).json({ error: 'Esperado um array de eventos' });
-    await writeJson('events.json', arr);
+    await writeJson('events', arr);
     // Notify connected websocket clients that events were updated
     try { broadcast({ type: 'eventsUpdated', count: arr.length }); } catch (e) { /* ignore */ }
     return res.json({ ok: true });
