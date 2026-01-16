@@ -3,10 +3,11 @@
   "builds": [
     {
       "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
+      "use": "@vercel/node"
+    },
+    {
+      "src": "Frontend/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -15,7 +16,7 @@
       "dest": "api/index.js"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|mp3|wav))",
+      "src": "/Frontend/(.*)",
       "dest": "/Frontend/$1"
     },
     {
