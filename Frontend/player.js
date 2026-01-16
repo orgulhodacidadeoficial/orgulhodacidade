@@ -3,11 +3,11 @@
     // Music player module
 
     const playlist = [
-        { title: 'PRA TE ENCANTAR', artist: 'ORGULHO DA CIDADE', file: 'audio/MASTER 01.mp3' },
-        { title: 'LÁGRIMAS DE SAUDADE', artist: 'ORGULHO DA CIDADE', file: 'audio/MASTER 02.mp3' },
-        { title: 'PROMESSA', artist: 'ORGULHO DA CIDADE', file: 'audio/MASTER 03.mp3' },
-        { title: 'GUERREIRO', artist: 'ORGULHO DA CIDADE', file: 'audio/MASTER 04.mp3' },
-        { title: 'MORENA', artist: 'ORGULHO DA CIDADE', file: 'audio/MASTER 05.mp3' }
+        { title: 'PRA TE ENCANTAR', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 01.mp3' },
+        { title: 'LÁGRIMAS DE SAUDADE', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 02.mp3' },
+        { title: 'PROMESSA', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 03.mp3' },
+        { title: 'GUERREIRO', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 04.mp3' },
+        { title: 'MORENA', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 05.mp3' }
     ];
 
     let currentTrackIndex = 0;
