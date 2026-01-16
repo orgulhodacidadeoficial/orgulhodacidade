@@ -128,14 +128,7 @@
                                     <h3>Carol</h3>
                                     <p>Guerreira</p>
                                 </div>
-                            </div>
-                            <div class="carousel-slide">
-                                <img src="brincante4.jpg" alt="Brincante 4" loading="lazy">
-                                <div class="brincante-info">
-                                    <h3>LK</h3>
-                                    <p>Vaqueiro</p>
-                                </div>
-                            </div>
+                            </div>                          
                             <div class="carousel-slide">
                                 <img src="brincante5.jpg" alt="Brincante 5" loading="lazy">
                                 <div class="brincante-info">
@@ -193,9 +186,9 @@
         </section>
 
         <!-- Seção de Apresentações -->
-        <section class="apresentacoes" id="apresentacoes-section">
+      <!--  <section class="apresentacoes" id="apresentacoes-section">
             <h2>Próximas Apresentações</h2>
-            <!-- Formulário de apresentações (admin) -->
+            
             <form id="form-apresentacao" class="admin-form">
                 <h3>Gerenciar Apresentações</h3>
                 <div class="form-grid">
@@ -246,14 +239,12 @@
                 </div>
             </form>
             <div class="lista-apresentacoes" id="lista-apresentacoes">
-                <!-- cards serão injetados aqui via JS -->
+                
             </div>
-        </section>
+        </section>-->
     </main>
 
-    
-    
-    <footer class="main-footer">
+   <footer class="main-footer">
         <div class="footer-content">
             <div class="footer-section">
                 <h3>Sobre Nós</h3>
@@ -278,15 +269,22 @@
                     <li>Email: orgulhodacidade@hotmail.com</li>
                 </ul>
                 <div class="footer-social">
-                   <-- <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a> -->
-                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="https://www.instagram.com/boiorgulhodacidade/" 
+                    target="_blank" 
+                    rel="noopener noreferrer nofollow" 
+                    aria-label="Siga o Boi Orgulho da Cidade no Instagram"
+                    title="Instagram - @boiorgulhodacidade">
+                    <i class="fab fa-instagram"></i>
+                    </a>
                 </div>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2025 Boi Orgulho da Cidade. Todos os direitos reservados.</p>
-            <!-- Área do proprietário removida -->
-        </div>
+  <p class="orgulho">
+    &copy; 2026 <span>Boi Orgulho da Cidade</span>
+  </p>
+  <p>Todos os direitos reservados • São Luís-MA</p>
+</div>
     </footer>
 
     <!-- Modal de Autenticação -->
@@ -409,48 +407,6 @@
                         if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'o') {
                 // antigo atalho para owner — redireciona para admin login
                 window.location.href = 'admin-login.html';
-            }
-
-            // novo atalho: Ctrl+Shift+A — cria/alternar botão "Área do Proprietário"
-                        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
-                try {
-                    const nav = document.querySelector('.nav-container');
-                    const existingBtn = document.getElementById('adminButton');
-                    if (existingBtn) {
-                        existingBtn.remove();
-                        const form = document.getElementById('form-apresentacao');
-                        if (form) form.style.display = 'none';
-                        return;
-                    }
-                    if (!nav) return;
-                    const newBtn = document.createElement('button');
-                    newBtn.id = 'adminButton';
-                    newBtn.textContent = 'Área do Proprietário';
-                    // estilos simples para combinar com a navegação
-                    newBtn.style.marginLeft = '8px';
-                    newBtn.style.padding = '0.4rem 0.6rem';
-                    newBtn.style.borderRadius = '8px';
-                    newBtn.style.background = 'transparent';
-                    newBtn.style.border = '1px solid rgba(255,255,255,0.12)';
-                    newBtn.style.color = '#fff';
-                    newBtn.style.cursor = 'pointer';
-                    newBtn.addEventListener('click', function(ev){
-                        ev.preventDefault();
-                        // se o módulo de eventos (events.js) estiver disponível, use a função de login/checar senha
-                        try {
-                            if (window.BoiEvents && typeof window.BoiEvents.handleAdminButtonClick === 'function'){
-                                window.BoiEvents.handleAdminButtonClick();
-                                return;
-                            }
-                        } catch(e){}
-                        // fallback: abrir a página de login do admin (owner removido)
-                        window.location.href = 'admin-login.html';
-                    });
-                    // insere antes do botão de menu móvel quando possível
-                    const mobileBtn = nav.querySelector('.mobile-menu');
-                    if (mobileBtn) nav.insertBefore(newBtn, mobileBtn);
-                    else nav.appendChild(newBtn);
-                } catch (err) { console.error('Erro ao alternar botão proprietário:', err); }
             }
         });
     </script>

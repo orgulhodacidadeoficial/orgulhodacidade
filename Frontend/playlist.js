@@ -654,7 +654,6 @@
                 // Cria Blob URL e toca
                 music.blobUrl = URL.createObjectURL(blob);
                 playMusicWithBlob(audioPlayer, music, musicIndex);
-                showNotification('✅ Áudio baixado e em reprodução', 'success');
             })
             .catch(err => {
                 console.error('Erro ao fazer download de áudio:', err);
@@ -670,6 +669,10 @@
         if (music && musicIndex !== -1) {
             const audioPlayer = document.getElementById('audioPlayer');
             if (audioPlayer) {
+                // Para qualquer música tocando do player principal
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                
                 // Se não tem blobUrl, tenta carregar do IndexedDB
                 if (!music.blobUrl) {
                     loadAudioFile(id).then(blobUrl => {

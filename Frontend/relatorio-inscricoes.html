@@ -14,9 +14,14 @@
                content being cut by printers. Slightly increase padding and
                keep readable font size for print. */
             body { margin: 0; background: white; font-size: 10pt; }
+            /* Esconder TUDO que não seja a página de relatório */
+            body > * { display: none !important; }
+            .page { display: block !important; }
             /* .page in print should match A4 portrait */
             .page { width: 21cm; min-height: 29.7cm; padding: 0.8cm; box-sizing: border-box; margin: 0 auto; }
-            .no-print { display: none; }
+            .no-print { display: none !important; }
+            /* Esconder abas de visualização na impressão */
+            [id="tabCategoria"], [id="tabTotal"], div[style*="border-bottom"] { display: none !important; }
             /* Reduce spacing for printed rows but keep readability */
             .inscricao { margin-bottom: 0.06cm; padding: 0.06cm 0; }
             .cabecalho-colunas { padding: 0.18cm 0; margin-bottom: 0.18cm; }
@@ -180,6 +185,13 @@
             <h1>Relatório de Inscrições - Seletiva 2026</h1>
             <div class="data">Gerado em: <span id="dataGeracao"></span></div>
         </div>
+        
+        <!-- Abas de visualização -->
+        <div style="margin: 1rem 0; border-bottom: 2px solid #ddd; display: flex; gap: 1rem;">
+            <button id="tabCategoria" style="background: none; border: none; padding: 0.75rem 1rem; cursor: pointer; font-size: 1rem; border-bottom: 3px solid #0046ad; color: #0046ad; font-weight: 600;">Por Categoria</button>
+            <button id="tabTotal" style="background: none; border: none; padding: 0.75rem 1rem; cursor: pointer; font-size: 1rem; border-bottom: 3px solid transparent; color: #666;">Total de Participantes</button>
+        </div>
+        
         <div id="conteudo"></div>
     </div>
 
@@ -201,7 +213,109 @@
             return groups;
         }
 
-        // Render inscriptions grouped by date
+        let dadosInscricoes = null;
+
+        // Render inscriptions grouped by category
+        function renderPorCategoria(inscricoes) {
+            const grupos = {};
+            inscricoes.forEach(item => {
+                const categoria = (item.tipo_participacao || 'Sem categoria').toLowerCase();
+                if (!grupos[categoria]) {
+                    grupos[categoria] = [];
+                }
+                grupos[categoria].push(item);
+            });
+
+            let html = '';
+            let numeroGeral = 1;
+            const participationOrder = { 'vaqueiro': 0, 'india': 1, 'indio': 2 };
+
+            const categoriasOrdenadas = Object.keys(grupos).sort((a, b) => {
+                const oa = (participationOrder.hasOwnProperty(a) ? participationOrder[a] : 99);
+                const ob = (participationOrder.hasOwnProperty(b) ? participationOrder[b] : 99);
+                return oa - ob;
+            });
+
+            categoriasOrdenadas.forEach((categoria) => {
+                const lista = grupos[categoria];
+                lista.sort((a, b) => String((a.nome || '')).localeCompare(String((b.nome || ''))));
+
+                html += `
+                    <div class="grupo-data">
+                        <h3>Inscrições como ${categoria.toUpperCase()}</h3>
+                        <div class="total">Total de ${categoria}s: ${lista.length}</div>
+                        <div class="cabecalho-colunas">
+                            <div class="campo campo-nome">NOME</div>
+                            <div class="campo campo-tel">TELEFONE</div>
+                            <div class="campo campo-idade">IDADE</div>
+                            <div class="campo campo-bairro">BAIRRO</div>
+                            <div class="campo campo-part">PARTICIPAÇÃO</div>
+                        </div>
+                        <ol class="inscricoes" start="${numeroGeral}">`;
+
+                lista.forEach(item => {
+                    html += `
+                        <li class="inscricao">
+                            <div class="campo campo-nome">${item.nome || '-'}</div>
+                            <div class="campo campo-tel">${item.telefone || '-'}</div>
+                            <div class="campo campo-idade">${item.idade || '-'}</div>
+                            <div class="campo campo-bairro">${item.bairro || '-'}</div>
+                            <div class="campo campo-part">${item.tipo_participacao || '-'}</div>
+                        </li>
+                    `;
+                });
+
+                html += '</ol></div>';
+                numeroGeral += lista.length;
+            });
+
+            html += `<div class="total">Total Geral: ${inscricoes.length} inscrições</div>`;
+            return html;
+        }
+
+        // Render all inscriptions together (total)
+        function renderTotal(inscricoes) {
+            // Sort by participation order then by name
+            const participationOrder = { 'vaqueiro': 0, 'india': 1, 'indio': 2 };
+            const sorted = [...inscricoes].sort((a, b) => {
+                const pa = (a.tipo_participacao || '').toLowerCase();
+                const pb = (b.tipo_participacao || '').toLowerCase();
+                const oa = (participationOrder.hasOwnProperty(pa) ? participationOrder[pa] : 99);
+                const ob = (participationOrder.hasOwnProperty(pb) ? participationOrder[pb] : 99);
+                if (oa !== ob) return oa - ob;
+                return String((a.nome || '')).localeCompare(String((b.nome || '')));
+            });
+
+            let html = `
+                <div class="grupo-data">
+                    <h3>Total de Participantes</h3>
+                    <div class="total">Total Geral: ${inscricoes.length} inscrições</div>
+                    <div class="cabecalho-colunas">
+                        <div class="campo campo-nome">NOME</div>
+                        <div class="campo campo-tel">TELEFONE</div>
+                        <div class="campo campo-idade">IDADE</div>
+                        <div class="campo campo-bairro">BAIRRO</div>
+                        <div class="campo campo-part">PARTICIPAÇÃO</div>
+                    </div>
+                    <ol class="inscricoes">`;
+
+            sorted.forEach(item => {
+                html += `
+                    <li class="inscricao">
+                        <div class="campo campo-nome">${item.nome || '-'}</div>
+                        <div class="campo campo-tel">${item.telefone || '-'}</div>
+                        <div class="campo campo-idade">${item.idade || '-'}</div>
+                        <div class="campo campo-bairro">${item.bairro || '-'}</div>
+                        <div class="campo campo-part">${item.tipo_participacao || '-'}</div>
+                    </li>
+                `;
+            });
+
+            html += '</ol></div>';
+            return html;
+        }
+
+        // Load and render inscriptions
         async function renderRelatorio() {
             try {
                 // Set generation date
@@ -210,67 +324,32 @@
                 // Fetch inscriptions
                 const r = await fetch('/api/admin/inscricoes', { credentials: 'include' });
                 if (!r.ok) throw new Error('Falha ao carregar inscrições');
-                const inscricoes = await r.json();
+                dadosInscricoes = await r.json();
 
-                if (!Array.isArray(inscricoes) || inscricoes.length === 0) {
+                if (!Array.isArray(dadosInscricoes) || dadosInscricoes.length === 0) {
                     document.getElementById('conteudo').innerHTML = '<p>Nenhuma inscrição encontrada.</p>';
                     return;
                 }
 
-                // Sort by receivedAt desc
-                inscricoes.sort((a, b) => (b.receivedAt || 0) - (a.receivedAt || 0));
-
-                // Group by date
-                const grupos = groupByDate(inscricoes);
+                // Show por categoria by default
+                document.getElementById('conteudo').innerHTML = renderPorCategoria(dadosInscricoes);
                 
-                // Generate HTML
-                let html = '';
-                let numeroGeral = 1;
-
-                Object.entries(grupos).forEach(([data, lista]) => {
-                    html += `
-                        <div class="grupo-data">
-                            <h3>Inscrições do dia ${data}</h3>
-                            <div class="total">Total do dia: ${lista.length}</div>
-                            <div class="cabecalho-colunas">
-                                <div class="campo campo-nome">NOME</div>
-                                <div class="campo campo-tel">TELEFONE</div>
-                                <div class="campo campo-idade">IDADE</div>
-                                <div class="campo campo-bairro">BAIRRO</div>
-                                <div class="campo campo-part">PARTICIPAÇÃO</div>
-                            </div>
-                            <ol class="inscricoes" start="${numeroGeral}">`;
-
-                    // Sort lista by desired participation order then by name
-                    const participationOrder = { 'vaqueiro': 0, 'india': 1, 'indio': 2 };
-                    lista.sort((a, b) => {
-                        const pa = (a.tipo_participacao || '').toLowerCase();
-                        const pb = (b.tipo_participacao || '').toLowerCase();
-                        const oa = (participationOrder.hasOwnProperty(pa) ? participationOrder[pa] : 99);
-                        const ob = (participationOrder.hasOwnProperty(pb) ? participationOrder[pb] : 99);
-                        if (oa !== ob) return oa - ob;
-                        // fallback: alphabetical by name
-                        return String((a.nome || '')).localeCompare(String((b.nome || '')));
-                    });
-
-                    lista.forEach(item => {
-                        html += `
-                            <li class="inscricao">
-                                <div class="campo campo-nome">${item.nome || '-'}</div>
-                                <div class="campo campo-tel">${item.telefone || '-'}</div>
-                                <div class="campo campo-idade">${item.idade || '-'}</div>
-                                <div class="campo campo-bairro">${item.bairro || '-'}</div>
-                                <div class="campo campo-part">${item.tipo_participacao || '-'}</div>
-                            </li>
-                        `;
-                    });
-
-                    html += '</ol></div>';
-                    numeroGeral += lista.length;
+                // Setup tab buttons
+                document.getElementById('tabCategoria').addEventListener('click', () => {
+                    document.getElementById('tabCategoria').style.borderBottom = '3px solid #0046ad';
+                    document.getElementById('tabCategoria').style.color = '#0046ad';
+                    document.getElementById('tabTotal').style.borderBottom = '3px solid transparent';
+                    document.getElementById('tabTotal').style.color = '#666';
+                    document.getElementById('conteudo').innerHTML = renderPorCategoria(dadosInscricoes);
                 });
 
-                html += `<div class="total">Total Geral: ${inscricoes.length} inscrições</div>`;
-                document.getElementById('conteudo').innerHTML = html;
+                document.getElementById('tabTotal').addEventListener('click', () => {
+                    document.getElementById('tabTotal').style.borderBottom = '3px solid #0046ad';
+                    document.getElementById('tabTotal').style.color = '#0046ad';
+                    document.getElementById('tabCategoria').style.borderBottom = '3px solid transparent';
+                    document.getElementById('tabCategoria').style.color = '#666';
+                    document.getElementById('conteudo').innerHTML = renderTotal(dadosInscricoes);
+                });
             } catch (err) {
                 alert('❌ Erro ao gerar relatório: ' + err.message);
             }

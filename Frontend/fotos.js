@@ -29,34 +29,7 @@ document.addEventListener('DOMContentLoaded', function(){
     isOwner = false;
   }
 
-  checkIfOwner();
 
-  // === CÓDIGO SECRETO PARA VIRAR ADMIN ===
-  // Use no console: makeAdmin() para virar admin
-  window.makeAdmin = function(){
-    const senha = prompt('Digite o código secreto para virar admin:');
-    // Código secreto: "boi2025" (customize como quiser)
-    const codigoCorreto = 'boi2025';
-    
-    if(senha === codigoCorreto){
-      const user = JSON.parse(localStorage.getItem('chatUser') || '{"name":"Visitante"}');
-      user.isAdmin = true;
-      user.isPresident = true;
-      localStorage.setItem('chatUser', JSON.stringify(user));
-      console.log('✅ Você é admin agora! Atualize a página (F5)');
-      showToast('✅ Código correto! Você é admin. Recarregue a página (F5)');
-      isOwner = true;
-      checkIfOwner();
-      // Ativa o modo admin de fotos (mostra control bar)
-      adminModeActive = true;
-      updateControlBarVisibility();
-      return true;
-    } else {
-      console.warn('❌ Código incorreto!');
-      showToast('❌ Código incorreto!');
-      return false;
-    }
-  };
 
   // Função exposta para admin.js ativar/desativar modo admin
   window.activatePhotoAdminMode = function(isActive){
