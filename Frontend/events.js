@@ -553,26 +553,13 @@
     } else {
       // Esconder o formulário quando não autenticado
       form.classList.remove('visible');
-      const input = document.createElement('input');
-      input.type = 'password';
-      input.id = 'admin-inline-pwd';
-      input.placeholder = 'Senha admin';
-      input.style.padding = '8px';
-      input.style.borderRadius = '8px';
-      input.style.border = '1px solid rgba(255,255,255,0.12)';
-      input.style.background = 'rgba(255,255,255,0.02)';
-      input.style.color = '#fff';
-      panel.appendChild(input);
-
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = 'Entrar';
+      btn.textContent = 'Entrar como Admin';
       btn.className = 'btn-primary';
       btn.style.padding = '8px 12px';
-      btn.addEventListener('click', async () => {
-        const pwd = document.getElementById('admin-inline-pwd')?.value || '';
-        const ok = await doAdminLogin(pwd);
-        if (ok) showAdminPanel(true);
+      btn.addEventListener('click', () => {
+        window.location.href = 'admin-login.html';
       });
       panel.appendChild(btn);
     }
