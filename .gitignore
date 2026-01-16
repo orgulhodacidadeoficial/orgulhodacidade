@@ -17,6 +17,7 @@ uploads/
 logs/
 data/config.json
 data/*.secret.json
+data/*.db
 .env.*
 .cache/
 *.log

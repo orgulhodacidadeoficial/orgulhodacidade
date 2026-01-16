@@ -6,8 +6,124 @@ const session = require('express-session');
 const http = require('http');
 const crypto = require('crypto');
 const WebSocket = require('ws');
+const sqlite3 = require('sqlite3').verbose();
 
 const app = express();
+
+// SQLite database initialization
+const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
+let db = new sqlite3.Database(DB_PATH, (err) => {
+  if (err) {
+    console.error('Erro abrindo banco de dados SQLite:', err);
+  } else {
+    console.log('Conectado ao banco de dados SQLite:', DB_PATH);
+    initializeTables();
+  }
+});
+
+// Wrapper para promessas no SQLite
+function dbRun(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function(err) {
+      if (err) reject(err);
+      else resolve(this);
+    });
+  });
+}
+
+function dbAll(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows || []);
+    });
+  });
+}
+
+function dbGet(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
+
+// Inicializar tabelas
+async function initializeTables() {
+  try {
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS inscricoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data JSON,
+        receivedAt INTEGER,
+        ip TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS contatos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data JSON,
+        receivedAt INTEGER,
+        ip TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS contratacoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data JSON,
+        receivedAt INTEGER,
+        ip TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        email TEXT UNIQUE,
+        passwordHash TEXT,
+        salt TEXT,
+        isAdmin INTEGER DEFAULT 0,
+        isPresident INTEGER DEFAULT 0,
+        createdAt INTEGER
+      )
+    `);
+    
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS photos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data JSON,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS stories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data JSON,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data JSON,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    console.log('Tabelas SQLite inicializadas com sucesso');
+  } catch (err) {
+    console.error('Erro inicializando tabelas:', err);
+  }
+}
 const server = http.createServer(app);
 // Server-Sent Events clients (for realtime updates)
 const sseClients = new Set();
@@ -263,7 +379,6 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 const FRONTEND_DIR = path.join(__dirname, '..', 'Frontend');
-const DATA_DIR = path.join(__dirname, '..', 'data');
 
 // Protect direct access to the admin HTML file: if user requests /admin.html
 // ensure they have a session; otherwise redirect to login.
@@ -345,56 +460,41 @@ function gerarNomeVisitante() {
 }
 
 // Owner endpoints removed: owner-login and verify-owner-code are no longer used
-
-async function ensureJsonArray(filePath) {
-  try {
-    const raw = await fsPromises.readFile(filePath, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      await fsPromises.writeFile(filePath, '[]', 'utf8');
-      return [];
-    }
-    return parsed;
-  } catch (err) {
-    // If file doesn't exist or is invalid, initialize as empty array
-    await fsPromises.writeFile(filePath, '[]', 'utf8');
-    return [];
-  }
+// Funções para SQLite
+async function appendToJson(tableName, entry) {
+  const dataJson = JSON.stringify(entry);
+  const receivedAt = entry.receivedAt || Date.now();
+  const ip = entry.ip || 'unknown';
+  
+  await dbRun(
+    `INSERT INTO ${tableName} (data, receivedAt, ip) VALUES (?, ?, ?)`,
+    [dataJson, receivedAt, ip]
+  );
 }
 
-async function appendToJson(fileName, entry) {
-  const filePath = path.join(DATA_DIR, fileName);
-  const arr = await ensureJsonArray(filePath);
-  arr.push(entry);
-  await fsPromises.writeFile(filePath, JSON.stringify(arr, null, 2), 'utf8');
-}
-
-async function readJson(fileName) {
-  const filePath = path.join(DATA_DIR, fileName);
-  try {
-    const raw = await fsPromises.readFile(filePath, 'utf8');
-    return JSON.parse(raw);
-  } catch (e) {
-    return [];
-  }
-}
-
-async function writeJson(fileName, arr) {
-  const filePath = path.join(DATA_DIR, fileName);
-  await fsPromises.writeFile(filePath, JSON.stringify(Array.isArray(arr) ? arr : [], null, 2), 'utf8');
-}
-
-// Ensure storage files exist on startup
-async function ensureStorageFiles() {
-  const files = ['inscricoes.json', 'contatos.json', 'contratacoes.json', 'users.json'];
-  for (const f of files) {
-    const p = path.join(DATA_DIR, f);
+async function readJson(tableName) {
+  const rows = await dbAll(`SELECT data FROM ${tableName} ORDER BY id DESC`);
+  return rows.map(row => {
     try {
-      await ensureJsonArray(p);
-    } catch (e) {
-      console.error('Erro garantindo arquivo', p, e);
+      return JSON.parse(row.data);
+    } catch {
+      return row.data;
     }
+  });
+}
+
+async function writeJson(tableName, arr) {
+  // Delete all and insert new
+  await dbRun(`DELETE FROM ${tableName}`);
+  for (const entry of arr) {
+    await appendToJson(tableName, entry);
   }
+}
+
+// Ensure storage tables exist on startup (chamado em initializeTables)
+async function ensureStorageFiles() {
+  // Já feito em initializeTables()
+  console.log('Storage tables já inicializados via SQLite');
 }
 
 // --- User helpers: password hashing + simple users store in Frontend/users.json ---
@@ -405,23 +505,32 @@ function hashPassword(password, salt = null) {
 }
 
 async function findUserByEmail(email) {
-  const users = await readJson('users.json');
-  return users.find(u => String(u.email).toLowerCase() === String(email).toLowerCase());
+  const user = await dbGet(
+    'SELECT * FROM users WHERE LOWER(email) = LOWER(?)',
+    [email]
+  );
+  return user || null;
 }
 
 async function createUser({ name, email, password }) {
   const existing = await findUserByEmail(email);
   if (existing) throw new Error('UserExists');
   const { salt, hash } = hashPassword(password);
+  const userId = crypto.randomBytes(12).toString('hex');
   const user = {
-    id: crypto.randomBytes(12).toString('hex'),
+    id: userId,
     name: name || 'Usuário',
     email,
     passwordHash: hash,
     salt,
     createdAt: Date.now(),
   };
-  await appendToJson('users.json', user);
+  
+  await dbRun(
+    `INSERT INTO users (id, name, email, passwordHash, salt, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
+    [user.id, user.name, user.email, user.passwordHash, user.salt, user.createdAt]
+  );
+  
   return user;
 }
 
@@ -496,8 +605,7 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/auth/me', async (req, res) => {
   try {
     if (!req.session || !req.session.userId) return res.json({ user: null });
-    const users = await readJson('users.json');
-    const user = users.find(u => u.id === req.session.userId);
+    const user = await dbGet('SELECT * FROM users WHERE id = ?', [req.session.userId]);
     if (!user) return res.json({ user: null });
     
     // Chat preferences removed with chat feature; return empty preferences
