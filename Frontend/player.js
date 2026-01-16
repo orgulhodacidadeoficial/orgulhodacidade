@@ -3,11 +3,11 @@
     // Music player module
 
     const playlist = [
-        { title: 'PRA TE ENCANTAR', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 01.mp3' },
-        { title: 'LÁGRIMAS DE SAUDADE', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 02.mp3' },
-        { title: 'PROMESSA', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 03.mp3' },
-        { title: 'GUERREIRO', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 04.mp3' },
-        { title: 'MORENA', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER 05.mp3' }
+        { title: 'PRA TE ENCANTAR', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER%2001.mp3' },
+        { title: 'LÁGRIMAS DE SAUDADE', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER%2002.mp3' },
+        { title: 'PROMESSA', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER%2003.mp3' },
+        { title: 'GUERREIRO', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER%2004.mp3' },
+        { title: 'MORENA', artist: 'ORGULHO DA CIDADE', file: '/audio/MASTER%2005.mp3' }
     ];
 
     let currentTrackIndex = 0;
@@ -55,7 +55,6 @@
         audioPlayer.addEventListener('loadedmetadata', () => {
             if (totalTimeSpan) totalTimeSpan.textContent = formatTime(audioPlayer.duration);
         });
-        audioPlayer.addEventListener('ended', playNext);
 
         document.querySelector('.progress-bar')?.addEventListener('click', (e) => {
             const progressBarEl = e.currentTarget;
@@ -122,7 +121,15 @@
 
     function playNext() {
         let newIndex = currentTrackIndex + 1;
-        if (newIndex >= playlist.length) newIndex = 0;
+        if (newIndex >= playlist.length) {
+            // Playlist terminou - parar de tocar
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+            return;
+        }
         loadTrack(newIndex);
         if (audioPlayer) {
             audioPlayer.play();
