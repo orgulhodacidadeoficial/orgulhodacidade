@@ -200,18 +200,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // remove existing badge if present
         const existing = slide.querySelector('.carousel-titulo-size-badge');
         if (existing) existing.remove();
-        const badge = document.createElement('div');
-        badge.className = 'carousel-titulo-size-badge';
-        badge.textContent = '';
-        slide.appendChild(badge);
-        // populate when image loads
-        if (imgEl.complete && imgEl.naturalWidth) {
-            badge.textContent = imgEl.naturalWidth + 'x' + imgEl.naturalHeight;
-        } else {
-            imgEl.addEventListener('load', () => {
-                try { badge.textContent = imgEl.naturalWidth + 'x' + imgEl.naturalHeight; } catch (e) {}
-            });
-        }
+        // Size badge removed - dimensions no longer displayed
     }
 
     async function syncCarouselFromServer() {

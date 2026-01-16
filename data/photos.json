@@ -1,21 +1,5 @@
 [
   {
-    "src": "images/ensaios/1763174649992-brincante7.jpg",
-    "categoria": "Ensaios",
-    "storyOnly": true,
-    "name": "",
-    "role": "",
-    "alt": "Banner"
-  },
-  {
-    "src": "images/ensaios/1763174536769-brincante5.jpg",
-    "categoria": "Ensaios",
-    "storyOnly": true,
-    "name": "",
-    "role": "",
-    "alt": "Banner"
-  },
-  {
     "src": "images/carrossel-brincantes/1763173638500-brincante7.jpg",
     "categoria": "carrossel-brincantes",
     "storyOnly": false,
@@ -81,14 +65,6 @@
   },
   {
     "src": "images/galeria/1763172323910-brincante5.jpg",
-    "categoria": "galeria",
-    "storyOnly": false,
-    "name": "",
-    "role": "",
-    "alt": "Banner"
-  },
-  {
-    "src": "images/galeria/1763172323905-brincante4.jpg",
     "categoria": "galeria",
     "storyOnly": false,
     "name": "",

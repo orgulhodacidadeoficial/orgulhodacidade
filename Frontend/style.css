@@ -549,9 +549,27 @@
 .subscription-form textarea:focus {
     outline: none;
     background: rgba(255, 255, 255, 0.96);
-    color: #111;
+    color: #f5efef;
     border-color: rgba(229, 46, 113, 0.9);
     box-shadow: 0 6px 30px rgba(229, 46, 113, 0.18);
+}
+
+.footer-bottom {
+  color: #ccc;
+  padding: 2.2rem 1rem;
+  text-align: center;
+  border-top: 4px solid rgba(229, 46, 113, 0.9);
+}
+
+.orgulho {
+  margin: 0 0 0.6rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: white;
+}
+
+.orgulho span {
+  color:rgba(229, 46, 113, 0.9);
 }
 
 /* Customizar select */
@@ -3476,7 +3494,7 @@ a, button, .btn {
     border: 1px solid var(--cor-borda);
     border-radius: 6px;
     font-size: 0.98rem;
-    background: #fff;
+    background: #534343;
     box-shadow: none;
     outline: none;
 }

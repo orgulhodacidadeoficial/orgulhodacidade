@@ -407,6 +407,16 @@ document.addEventListener('DOMContentLoaded', function(){
         console.error('erro ao criar story:', s, e);
       }
     });
+    // Atualizar visibilidade dos botões de navegação
+    updateStoriesNavVisibility();
+  }
+
+  function updateStoriesNavVisibility(){
+    const storiesPrev = document.getElementById('stories-prev');
+    const storiesNext = document.getElementById('stories-next');
+    const hasStories = stories && stories.length > 0;
+    if(storiesPrev) storiesPrev.style.display = hasStories ? 'flex' : 'none';
+    if(storiesNext) storiesNext.style.display = hasStories ? 'flex' : 'none';
   }
 
   // carregar stories.json (opcional)
@@ -474,6 +484,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // navigation buttons for stories (desktop)
   const storiesPrev = document.getElementById('stories-prev');
   const storiesNext = document.getElementById('stories-next');
+  updateStoriesNavVisibility();
   if(storiesPrev && storiesNext && storiesContainer){
     const scrollAmount = 96; // 84px (bolinha) + 12px (gap) = scroll 1 bolinha at a time
     storiesPrev.addEventListener('click', ()=>{
