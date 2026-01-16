@@ -234,12 +234,16 @@
 
     // Manipula quando a música termina
     function handleMusicEnded() {
+        console.log('🎵 Música terminou. autoPlayEnabled:', autoPlayEnabled, 'currentPlayingIndex:', currentPlayingIndex, 'playlistLength:', playlistData.length);
+        
         if (autoPlayEnabled && currentPlayingIndex !== -1) {
             const nextIndex = currentPlayingIndex + 1;
+            console.log('Tentando tocar próxima. nextIndex:', nextIndex);
             
             if (nextIndex < playlistData.length) {
                 // Há próxima música na playlist
                 const nextMusic = playlistData[nextIndex];
+                console.log('Tocando próxima música:', nextMusic.title);
                 handlePlayMusic(nextMusic.id);
             } else {
                 // Chegou ao final da playlist - parar e mostrar botão de repetir
@@ -673,6 +677,9 @@
         if (music && musicIndex !== -1) {
             const audioPlayer = document.getElementById('audioPlayer');
             if (audioPlayer) {
+                // Ativa autoplay para tocar todas as músicas da playlist
+                autoPlayEnabled = true;
+                
                 // Verifica se é uma música do player principal (por título)
                 if (window.Player && window.Player.getPlaylist) {
                     const mainPlaylist = window.Player.getPlaylist();

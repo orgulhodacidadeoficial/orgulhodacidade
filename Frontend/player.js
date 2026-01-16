@@ -119,15 +119,41 @@
         }
     }
 
+    function scrollToCurrentTrack() {
+        // Espera um pouco para a playlist renderizar
+        setTimeout(() => {
+            if (currentTrackIndex < 0 || !playlist[currentTrackIndex]) return;
+            
+            const currentTrack = playlist[currentTrackIndex];
+            const playlistContainer = document.getElementById('playlistContainer');
+            
+            if (!playlistContainer) return;
+            
+            // Procura o elemento da música atual
+            const items = playlistContainer.querySelectorAll('.playlist-item');
+            if (items[currentTrackIndex]) {
+                const item = items[currentTrackIndex];
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Destaca o item por um breve momento
+                item.style.background = 'rgba(255, 138, 0, 0.2)';
+                setTimeout(() => {
+                    item.style.background = '';
+                }, 1000);
+            }
+        }, 100);
+    }
+
     function playNext() {
         let newIndex = currentTrackIndex + 1;
         if (newIndex >= playlist.length) {
-            // Playlist terminou - parar de tocar
+            // Playlist terminou - mostrar botão de repetir
             if (audioPlayer) {
                 audioPlayer.pause();
                 audioPlayer.currentTime = 0;
                 if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
             }
+            showRepeatPlaylistButton();
             return;
         }
         loadTrack(newIndex);
@@ -135,6 +161,37 @@
             audioPlayer.play();
             if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         }
+    }
+
+    function showRepeatPlaylistButton() {
+        // Remove botão anterior se existir
+        const existingBtn = document.getElementById('repeatPlaylistBtn');
+        if (existingBtn) existingBtn.remove();
+
+        // Cria e insere o botão de repetir
+        const controls = document.querySelector('.player-controls');
+        if (!controls) return;
+
+        const repeatBtn = document.createElement('button');
+        repeatBtn.id = 'repeatPlaylistBtn';
+        repeatBtn.className = 'btn-repeat-playlist';
+        repeatBtn.innerHTML = '<i class="fas fa-redo"></i> Repetir Playlist';
+        repeatBtn.addEventListener('click', repeatPlaylist);
+        
+        controls.appendChild(repeatBtn);
+    }
+
+    function repeatPlaylist() {
+        if (playlist.length === 0) return;
+        currentTrackIndex = 0;
+        loadTrack(0);
+        if (audioPlayer) {
+            audioPlayer.play();
+            if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+        // Remove o botão de repetir
+        const repeatBtn = document.getElementById('repeatPlaylistBtn');
+        if (repeatBtn) repeatBtn.remove();
     }
 
     function updateProgress() {
@@ -214,6 +271,15 @@
         init: () => {
             init();
             renderPlatformLinks();
+        },
+        loadTrack: loadTrack,
+        getCurrentTrackIndex: () => currentTrackIndex,
+        getPlaylist: () => playlist,
+        play: () => {
+            if (audioPlayer) audioPlayer.play();
+        },
+        pause: () => {
+            if (audioPlayer) audioPlayer.pause();
         }
     };
 })();

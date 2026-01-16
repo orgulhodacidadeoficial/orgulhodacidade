@@ -602,7 +602,7 @@
 
 /* Botão de envio */
 .subscription-form .btn-primary {
-    display: inline-block;
+    display: block;
     margin: 30px auto 0;
     padding: 16px 40px;
     background: linear-gradient(135deg, #ff8a00 0%, #e52e71 50%, #6a00ff 100%);
@@ -618,6 +618,7 @@
     box-shadow: 0 6px 20px rgba(229, 46, 113, 0.4);
     position: relative;
     overflow: hidden;
+    width: fit-content;
 }
 
 .subscription-form .btn-primary::before {
@@ -4795,8 +4796,8 @@ footer {
 
 /* Botão de envio */
 .contact-content .btn-primary {
-    display: inline-block;
-    margin-top: 20px;
+    display: block;
+    margin: 20px auto;
     padding: 14px 36px;
     background: linear-gradient(135deg, #ff8a00 0%, #e52e71 50%, #6a00ff 100%);
     color: white;
@@ -4811,6 +4812,7 @@ footer {
     box-shadow: 0 6px 20px rgba(229, 46, 113, 0.4);
     position: relative;
     overflow: hidden;
+    width: fit-content;
 }
 
 .contact-content .btn-primary::before {

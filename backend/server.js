@@ -73,9 +73,9 @@ async function savePlaylistToFile() {
 const multer = require('multer');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const IMAGES_DIR = path.join(__dirname, '..', 'Frontend', 'images');
-fs.mkdir(UPLOADS_DIR, { recursive: true }).catch(()=>{});
+fsPromises.mkdir(UPLOADS_DIR, { recursive: true }).catch(()=>{});
 // ensure images dir exists
-fs.mkdir(IMAGES_DIR, { recursive: true }).catch(()=>{});
+fsPromises.mkdir(IMAGES_DIR, { recursive: true }).catch(()=>{});
 const audioStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, UPLOADS_DIR);
