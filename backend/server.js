@@ -7,21 +7,54 @@ const http = require('http');
 const crypto = require('crypto');
 const WebSocket = require('ws');
 const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 
 const app = express();
 
-// SQLite database initialization
-const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
-let db = new sqlite3.Database(DB_PATH, (err) => {
-  if (err) {
-    console.error('Erro abrindo banco de dados SQLite:', err);
-  } else {
-    console.log('Conectado ao banco de dados SQLite:', DB_PATH);
-    initializeTables();
-  }
-});
+// Detectar se usar PostgreSQL ou SQLite
+const USE_POSTGRES = !!process.env.DATABASE_URL;
+let pool = null;
+let db = null;
 
-// Wrapper para promessas no SQLite
+// PostgreSQL initialization
+if (USE_POSTGRES) {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+  
+  pool.on('error', (err) => {
+    console.error('Erro no pool PostgreSQL:', err);
+  });
+  
+  console.log('✅ Usando PostgreSQL para persistência de dados');
+  initializePgTables();
+} else {
+  // SQLite database initialization
+  const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
+  db = new sqlite3.Database(DB_PATH, (err) => {
+    if (err) {
+      console.error('Erro abrindo banco de dados SQLite:', err);
+    } else {
+      console.log('Conectado ao banco de dados SQLite:', DB_PATH);
+      initializeTables();
+    }
+  });
+  console.log('ℹ️  Usando SQLite (local) - para produção use PostgreSQL com DATABASE_URL');
+}
+
+// PostgreSQL Query wrapper
+async function pgQuery(sql, params = []) {
+  try {
+    const result = await pool.query(sql, params);
+    return result;
+  } catch (err) {
+    console.error('Erro PostgreSQL:', err);
+    throw err;
+  }
+}
+
+// SQLite Wrapper para promessas
 function dbRun(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function(err) {
@@ -124,6 +157,81 @@ async function initializeTables() {
     console.error('Erro inicializando tabelas:', err);
   }
 }
+
+// PostgreSQL Initialize Tables
+async function initializePgTables() {
+  try {
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS inscricoes (
+        id SERIAL PRIMARY KEY,
+        data JSONB,
+        receivedAt BIGINT,
+        ip TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS contatos (
+        id SERIAL PRIMARY KEY,
+        data JSONB,
+        receivedAt BIGINT,
+        ip TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS contratacoes (
+        id SERIAL PRIMARY KEY,
+        data JSONB,
+        receivedAt BIGINT,
+        ip TEXT,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        email TEXT UNIQUE,
+        passwordHash TEXT,
+        salt TEXT,
+        isAdmin INTEGER DEFAULT 0,
+        isPresident INTEGER DEFAULT 0,
+        createdAt BIGINT
+      )
+    `);
+    
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS photos (
+        id SERIAL PRIMARY KEY,
+        data JSONB,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS stories (
+        id SERIAL PRIMARY KEY,
+        data JSONB,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS events (
+        id SERIAL PRIMARY KEY,
+        data JSONB,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    console.log('✅ Tabelas PostgreSQL inicializadas com sucesso');
+  } catch (err) {
+    console.error('Erro inicializando tabelas PostgreSQL:', err);
+  }
 const server = http.createServer(app);
 // Server-Sent Events clients (for realtime updates)
 const sseClients = new Set();
@@ -460,20 +568,27 @@ function gerarNomeVisitante() {
 }
 
 // Owner endpoints removed: owner-login and verify-owner-code are no longer used
-// Funções para SQLite e JSON
+// Funções para PostgreSQL/SQLite e JSON
 const DATA_DIR = path.join(__dirname, '..', 'data');
 
 async function appendToJson(tableName, entry) {
-  // Para tabelas SQLite (inscricoes, contatos, contratacoes, users)
+  // Para tabelas persistentes (inscricoes, contatos, contratacoes, users)
   if (['inscricoes', 'contatos', 'contratacoes', 'users'].includes(tableName)) {
     const dataJson = JSON.stringify(entry);
     const receivedAt = entry.receivedAt || Date.now();
     const ip = entry.ip || 'unknown';
     
-    await dbRun(
-      `INSERT INTO ${tableName} (data, receivedAt, ip) VALUES (?, ?, ?)`,
-      [dataJson, receivedAt, ip]
-    );
+    if (USE_POSTGRES) {
+      await pgQuery(
+        `INSERT INTO ${tableName} (data, receivedAt, ip) VALUES ($1, $2, $3)`,
+        [dataJson, receivedAt, ip]
+      );
+    } else {
+      await dbRun(
+        `INSERT INTO ${tableName} (data, receivedAt, ip) VALUES (?, ?, ?)`,
+        [dataJson, receivedAt, ip]
+      );
+    }
   } else {
     // Para tabelas JSON (photos, stories, events)
     const filePath = path.join(DATA_DIR, tableName + '.json');
@@ -491,16 +606,27 @@ async function appendToJson(tableName, entry) {
 }
 
 async function readJson(tableName) {
-  // Para tabelas SQLite (inscricoes, contatos, contratacoes, users)
+  // Para tabelas persistentes (inscricoes, contatos, contratacoes, users)
   if (['inscricoes', 'contatos', 'contratacoes', 'users'].includes(tableName)) {
-    const rows = await dbAll(`SELECT data FROM ${tableName} ORDER BY id DESC`);
-    return rows.map(row => {
-      try {
-        return JSON.parse(row.data);
-      } catch {
-        return row.data;
-      }
-    });
+    if (USE_POSTGRES) {
+      const result = await pgQuery(`SELECT data FROM ${tableName} ORDER BY id DESC`);
+      return result.rows.map(row => {
+        try {
+          return JSON.parse(row.data);
+        } catch {
+          return row.data;
+        }
+      });
+    } else {
+      const rows = await dbAll(`SELECT data FROM ${tableName} ORDER BY id DESC`);
+      return rows.map(row => {
+        try {
+          return JSON.parse(row.data);
+        } catch {
+          return row.data;
+        }
+      });
+    }
   } else {
     // Para tabelas JSON (photos, stories, events)
     const filePath = path.join(DATA_DIR, tableName + '.json');
@@ -514,12 +640,19 @@ async function readJson(tableName) {
 }
 
 async function writeJson(tableName, arr) {
-  // Para tabelas SQLite (inscricoes, contatos, contratacoes, users)
+  // Para tabelas persistentes (inscricoes, contatos, contratacoes, users)
   if (['inscricoes', 'contatos', 'contratacoes', 'users'].includes(tableName)) {
-    // Delete all and insert new
-    await dbRun(`DELETE FROM ${tableName}`);
-    for (const entry of arr) {
-      await appendToJson(tableName, entry);
+    if (USE_POSTGRES) {
+      await pgQuery(`DELETE FROM ${tableName}`);
+      for (const entry of arr) {
+        await appendToJson(tableName, entry);
+      }
+    } else {
+      // Delete all and insert new
+      await dbRun(`DELETE FROM ${tableName}`);
+      for (const entry of arr) {
+        await appendToJson(tableName, entry);
+      }
     }
   } else {
     // Para tabelas JSON (photos, stories, events)
@@ -531,10 +664,14 @@ async function writeJson(tableName, arr) {
 // Ensure storage tables exist on startup (chamado em initializeTables)
 async function ensureStorageFiles() {
   // Já feito em initializeTables()
-  console.log('Storage tables já inicializados via SQLite');
+  if (USE_POSTGRES) {
+    console.log('Storage tables já inicializados via PostgreSQL');
+  } else {
+    console.log('Storage tables já inicializados via SQLite');
+  }
 }
 
-// --- User helpers: password hashing + simple users store in Frontend/users.json ---
+// --- User helpers: password hashing + simple users store in PostgreSQL/SQLite ---
 function hashPassword(password, salt = null) {
   salt = salt || crypto.randomBytes(16).toString('hex');
   const hash = crypto.pbkdf2Sync(String(password), salt, 100000, 64, 'sha512').toString('hex');
@@ -542,11 +679,19 @@ function hashPassword(password, salt = null) {
 }
 
 async function findUserByEmail(email) {
-  const user = await dbGet(
-    'SELECT * FROM users WHERE LOWER(email) = LOWER(?)',
-    [email]
-  );
-  return user || null;
+  if (USE_POSTGRES) {
+    const result = await pgQuery(
+      'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
+      [email]
+    );
+    return result.rows[0] || null;
+  } else {
+    const user = await dbGet(
+      'SELECT * FROM users WHERE LOWER(email) = LOWER(?)',
+      [email]
+    );
+    return user || null;
+  }
 }
 
 async function createUser({ name, email, password }) {
@@ -563,10 +708,17 @@ async function createUser({ name, email, password }) {
     createdAt: Date.now(),
   };
   
-  await dbRun(
-    `INSERT INTO users (id, name, email, passwordHash, salt, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
-    [user.id, user.name, user.email, user.passwordHash, user.salt, user.createdAt]
-  );
+  if (USE_POSTGRES) {
+    await pgQuery(
+      `INSERT INTO users (id, name, email, passwordHash, salt, createdAt) VALUES ($1, $2, $3, $4, $5, $6)`,
+      [user.id, user.name, user.email, user.passwordHash, user.salt, user.createdAt]
+    );
+  } else {
+    await dbRun(
+      `INSERT INTO users (id, name, email, passwordHash, salt, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
+      [user.id, user.name, user.email, user.passwordHash, user.salt, user.createdAt]
+    );
+  }
   
   return user;
 }
@@ -642,7 +794,13 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/auth/me', async (req, res) => {
   try {
     if (!req.session || !req.session.userId) return res.json({ user: null });
-    const user = await dbGet('SELECT * FROM users WHERE id = ?', [req.session.userId]);
+    let user;
+    if (USE_POSTGRES) {
+      const result = await pgQuery('SELECT * FROM users WHERE id = $1', [req.session.userId]);
+      user = result.rows[0];
+    } else {
+      user = await dbGet('SELECT * FROM users WHERE id = ?', [req.session.userId]);
+    }
     if (!user) return res.json({ user: null });
     
     // Chat preferences removed with chat feature; return empty preferences
