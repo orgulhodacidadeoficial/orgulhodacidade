@@ -9,4 +9,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3000
+        value: 3000    disk:
+      - path: /opt/render/project/data
+        name: sqlite-db
+        sizeGB: 1
