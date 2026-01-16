@@ -515,43 +515,13 @@
   }
 
   function showAdminPanel(isAdmin) {
-    // Cria/atualiza um painel simples acima do formulário para login/logout
+    // Painel admin removido - apenas ocultar/mostrar formulário
     const form = document.getElementById('form-apresentacao');
     if (!form) return;
-
-    // Container do painel
-    let panel = document.getElementById('admin-panel-inline');
-    if (!panel) {
-      panel = document.createElement('div');
-      panel.id = 'admin-panel-inline';
-      panel.style.display = 'flex';
-      panel.style.gap = '0.5rem';
-      panel.style.alignItems = 'center';
-      panel.style.marginBottom = '1rem';
-      form.parentElement.insertBefore(panel, form);
-    }
-
-    panel.innerHTML = '';
+    
     if (isAdmin) {
-      // Mostrar o formulário admin quando conectado
       form.classList.add('visible');
-      const lbl = document.createElement('span');
-      lbl.textContent = '🔒 Conectado como administrador';
-      lbl.style.color = '#fff';
-      panel.appendChild(lbl);
-
-      const btnLogout = document.createElement('button');
-      btnLogout.type = 'button';
-      btnLogout.textContent = 'Sair';
-      btnLogout.className = 'btn-primary';
-      btnLogout.style.padding = '8px 12px';
-      btnLogout.addEventListener('click', async () => {
-        await doAdminLogout();
-        showAdminPanel(false);
-      });
-      panel.appendChild(btnLogout);
     } else {
-      // Esconder o formulário quando não autenticado - não mostrar nada
       form.classList.remove('visible');
     }
   }
@@ -578,6 +548,12 @@
   async function doAdminLogout() {
     try {
       await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
+      
+      // Se estiver em admin.html, redireciona para admin-login.html
+      if (window.location.pathname.includes('admin.html')) {
+        window.location.href = 'admin-login.html';
+      }
+      
       return true;
     } catch (e) {
       console.error('Erro logout admin', e);
@@ -1072,32 +1048,6 @@
 
   // Sincronizar com o servidor a cada 5 segundos para que outros usuários vejam atualizações em tempo real
   setInterval(syncWithServer, 5000);
-
-  // Listener para Ctrl+Shift+A - ativa modo admin de apresentações e fotos
-  document.addEventListener('keydown', function(e){
-    if(e.ctrlKey && e.shiftKey && e.key === 'A'){
-      e.preventDefault();
-      const senha = prompt('Digite o código secreto para virar admin:');
-      const codigoCorreto = 'boi2025';
-      if(senha === codigoCorreto){
-        const user = JSON.parse(localStorage.getItem('chatUser') || '{"name":"Visitante"}');
-        user.isAdmin = true;
-        user.isPresident = true;
-        localStorage.setItem('chatUser', JSON.stringify(user));
-        console.log('✅ Você é admin agora!');
-        showTemporaryMessage('✅ Código correto! Você é admin.');
-        // Ativa o modo admin para apresentações
-        checkAdminStatus();
-        // Se fotos.js está presente, ativa o modo admin de fotos também
-        if (window.activatePhotoAdminMode) {
-          window.activatePhotoAdminMode(true);
-        }
-      } else {
-        console.warn('❌ Código incorreto!');
-        showTemporaryMessage('❌ Código incorreto!');
-      }
-    }
-  });
 
   // Atualiza badges de status periodicamente e notifica quando um evento finalizar
   const prevStatuses = {};
