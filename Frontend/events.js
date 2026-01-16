@@ -551,17 +551,8 @@
       });
       panel.appendChild(btnLogout);
     } else {
-      // Esconder o formulário quando não autenticado
+      // Esconder o formulário quando não autenticado - não mostrar nada
       form.classList.remove('visible');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = 'Entrar como Admin';
-      btn.className = 'btn-primary';
-      btn.style.padding = '8px 12px';
-      btn.addEventListener('click', () => {
-        window.location.href = 'admin-login.html';
-      });
-      panel.appendChild(btn);
     }
   }
 
