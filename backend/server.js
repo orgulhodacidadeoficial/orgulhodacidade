@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
-const fs = require('fs').promises;
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 const session = require('express-session');
 const http = require('http');
 const crypto = require('crypto');
@@ -48,7 +49,7 @@ let playlistCache = { musics: [], lastUpdated: new Date().toISOString() };
 // Carrega playlist do arquivo
 async function loadPlaylistFromFile() {
   try {
-    const data = await fs.readFile(PLAYLIST_FILE, 'utf8');
+    const data = await fsPromises.readFile(PLAYLIST_FILE, 'utf8');
     playlistCache = JSON.parse(data);
     console.log(`[Playlist] Carregada do arquivo: ${playlistCache.musics.length} músicas`);
   } catch (e) {
@@ -61,7 +62,7 @@ async function loadPlaylistFromFile() {
 async function savePlaylistToFile() {
   try {
     playlistCache.lastUpdated = new Date().toISOString();
-    await fs.writeFile(PLAYLIST_FILE, JSON.stringify(playlistCache, null, 2));
+    await fsPromises.writeFile(PLAYLIST_FILE, JSON.stringify(playlistCache, null, 2));
     console.log(`[Playlist] Salva no arquivo: ${playlistCache.musics.length} músicas`);
   } catch (e) {
     console.error('[Playlist] Erro ao salvar arquivo:', e.message);
@@ -123,7 +124,7 @@ app.post('/api/create-story', upload.single('file'), async (req, res) => {
     const storiesFile = path.join(__dirname, '..', 'data', 'stories.json');
     let list = [];
     try {
-      const raw = await fs.readFile(storiesFile, 'utf8');
+      const raw = await fsPromises.readFile(storiesFile, 'utf8');
       list = JSON.parse(raw);
     } catch (e) {
       list = [];
@@ -140,7 +141,7 @@ app.post('/api/create-story', upload.single('file'), async (req, res) => {
     
     // create category-specific folder and move file there
     const categoryDir = path.join(IMAGES_DIR, folderName);
-    try { await fs.mkdir(categoryDir, { recursive: true }); } catch (e) {}
+    try { await fsPromises.mkdir(categoryDir, { recursive: true }); } catch (e) {}
     
     const newPath = path.join(categoryDir, req.file.filename);
     try {
@@ -166,7 +167,7 @@ app.post('/api/create-story', upload.single('file'), async (req, res) => {
 
     list.push(storyObj);
     try {
-      await fs.writeFile(storiesFile, JSON.stringify(list, null, 2), 'utf8');
+      await fsPromises.writeFile(storiesFile, JSON.stringify(list, null, 2), 'utf8');
     } catch (e) {
       console.error('[create-story] could not write stories.json:', e && e.message ? e.message : e);
       return res.status(500).json({ error: 'write_failed', message: String(e && e.message ? e.message : e) });
@@ -191,7 +192,7 @@ app.post('/api/upload', upload.array('photos', 10), async (req, res) => {
     const storyOnly = req.body.storyOnly === '1' || req.body.storyOnly === 'true' || req.body.storyOnly === true;
     let list = [];
     try {
-      const raw = await fs.readFile(photosFile, 'utf8');
+      const raw = await fsPromises.readFile(photosFile, 'utf8');
       list = JSON.parse(raw);
     } catch (e) {
       // ignore, start with empty
@@ -212,7 +213,7 @@ app.post('/api/upload', upload.array('photos', 10), async (req, res) => {
       let rel = path.join('images', finalBase).replace(/\\/g, '/');
       if(folderName){
         const destDir = path.join(IMAGES_DIR, folderName);
-        try{ await fs.mkdir(destDir, { recursive: true }); }catch(e){}
+        try{ await fsPromises.mkdir(destDir, { recursive: true }); }catch(e){}
         const newPath = path.join(destDir, finalBase);
         try{
           await fs.rename(f.path, newPath);
@@ -229,7 +230,7 @@ app.post('/api/upload', upload.array('photos', 10), async (req, res) => {
       list.unshift(obj);
       added.push(obj);
     }
-    await fs.writeFile(photosFile, JSON.stringify(list, null, 2), 'utf8');
+    await fsPromises.writeFile(photosFile, JSON.stringify(list, null, 2), 'utf8');
     // respond with added items
     res.json({ ok: true, added });
     try { sendSseEvent('carousel-update', { type: 'upload', added }); } catch (e) {}
@@ -271,6 +272,35 @@ app.use((req, res, next) => {
     if (!req.session || !req.session.admin) return res.redirect('/admin-login.html');
   }
   next();
+});
+
+// Rota específica para servir arquivos de áudio da pasta audio/
+app.get('/audio/:filename(*)', (req, res) => {
+  try {
+    const decodedFilename = decodeURIComponent(req.params.filename);
+    const audioPath = path.join(FRONTEND_DIR, 'audio', decodedFilename);
+    
+    // Validação de segurança: garante que o arquivo está dentro da pasta audio/
+    const normalizedPath = path.normalize(audioPath);
+    const audioDir = path.normalize(path.join(FRONTEND_DIR, 'audio'));
+    
+    if (!normalizedPath.startsWith(audioDir)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    // Verifica se o arquivo existe
+    if (fs.existsSync(normalizedPath)) {
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Accept-Ranges', 'bytes');
+      return res.sendFile(normalizedPath);
+    } else {
+      console.warn(`Audio file not found: ${normalizedPath}`);
+      return res.status(404).json({ error: 'Audio file not found', file: decodedFilename });
+    }
+  } catch (err) {
+    console.error('Erro ao servir arquivo de áudio:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Serve static frontend files
@@ -318,16 +348,16 @@ function gerarNomeVisitante() {
 
 async function ensureJsonArray(filePath) {
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fsPromises.readFile(filePath, 'utf8');
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
-      await fs.writeFile(filePath, '[]', 'utf8');
+      await fsPromises.writeFile(filePath, '[]', 'utf8');
       return [];
     }
     return parsed;
   } catch (err) {
     // If file doesn't exist or is invalid, initialize as empty array
-    await fs.writeFile(filePath, '[]', 'utf8');
+    await fsPromises.writeFile(filePath, '[]', 'utf8');
     return [];
   }
 }
@@ -336,13 +366,13 @@ async function appendToJson(fileName, entry) {
   const filePath = path.join(DATA_DIR, fileName);
   const arr = await ensureJsonArray(filePath);
   arr.push(entry);
-  await fs.writeFile(filePath, JSON.stringify(arr, null, 2), 'utf8');
+  await fsPromises.writeFile(filePath, JSON.stringify(arr, null, 2), 'utf8');
 }
 
 async function readJson(fileName) {
   const filePath = path.join(DATA_DIR, fileName);
   try {
-    const raw = await fs.readFile(filePath, 'utf8');
+    const raw = await fsPromises.readFile(filePath, 'utf8');
     return JSON.parse(raw);
   } catch (e) {
     return [];
@@ -351,7 +381,7 @@ async function readJson(fileName) {
 
 async function writeJson(fileName, arr) {
   const filePath = path.join(DATA_DIR, fileName);
-  await fs.writeFile(filePath, JSON.stringify(Array.isArray(arr) ? arr : [], null, 2), 'utf8');
+  await fsPromises.writeFile(filePath, JSON.stringify(Array.isArray(arr) ? arr : [], null, 2), 'utf8');
 }
 
 // Ensure storage files exist on startup
