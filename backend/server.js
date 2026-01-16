@@ -28,7 +28,10 @@ if (USE_POSTGRES) {
   });
   
   console.log('✅ Usando PostgreSQL para persistência de dados');
-  initializePgTables();
+  // Initialize tables asynchronously
+  initializePgTables().catch(err => {
+    console.error('Erro crítico ao inicializar tabelas PostgreSQL:', err);
+  });
 } else {
   // SQLite database initialization
   const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
@@ -232,6 +235,8 @@ async function initializePgTables() {
   } catch (err) {
     console.error('Erro inicializando tabelas PostgreSQL:', err);
   }
+}
+
 const server = http.createServer(app);
 // Server-Sent Events clients (for realtime updates)
 const sseClients = new Set();
