@@ -1263,25 +1263,45 @@ app.post('/api/chat', express.json(), async (req, res) => {
     console.log(`[CHAT] Salvando mensagem: ${cleanUser} (${cleanRole}) no vídeo ${videoId}`);
     
     if (USE_POSTGRES) {
-      // PostgreSQL
-      const result = await pgQuery(
-        `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-        [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
-      );
-      console.log(`[CHAT] ✅ Mensagem salva com ID: ${result.rows[0].id}`);
-      return res.json({ success: true, id: result.rows[0].id });
+      // PostgreSQL - Tentar com email/role, se falhar, sem eles
+      try {
+        const result = await pgQuery(
+          `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+          [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
+        );
+        console.log(`[CHAT] ✅ Mensagem salva (com role) com ID: ${result.rows[0].id}`);
+        return res.json({ success: true, id: result.rows[0].id });
+      } catch (err) {
+        console.warn('[CHAT] Colunas email/role não existem, salvando sem elas...', err.message);
+        const result = await pgQuery(
+          `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
+          [videoId, cleanUser, cleanText, timestamp]
+        );
+        console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.rows[0].id}`);
+        return res.json({ success: true, id: result.rows[0].id });
+      }
     } else {
-      // SQLite
-      const result = await dbRun(
-        `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
-        [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
-      );
-      console.log(`[CHAT] ✅ Mensagem salva com ID: ${result.lastID}`);
-      return res.json({ success: true, id: result.lastID });
+      // SQLite - Tentar com email/role, se falhar, sem eles
+      try {
+        const result = await dbRun(
+          `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
+          [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
+        );
+        console.log(`[CHAT] ✅ Mensagem salva (com role) com ID: ${result.lastID}`);
+        return res.json({ success: true, id: result.lastID });
+      } catch (err) {
+        console.warn('[CHAT] Colunas email/role não existem, salvando sem elas...', err.message);
+        const result = await dbRun(
+          `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES (?, ?, ?, ?)`,
+          [videoId, cleanUser, cleanText, timestamp]
+        );
+        console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.lastID}`);
+        return res.json({ success: true, id: result.lastID });
+      }
     }
   } catch (err) {
     console.error('[CHAT] ❌ Erro ao salvar mensagem de chat:', err);
-    return res.status(500).json({ error: 'Failed to save message' });
+    return res.status(500).json({ error: 'Failed to save message', details: err.message });
   }
 });
 
@@ -1297,33 +1317,63 @@ app.get('/api/chat', async (req, res) => {
     const limitNum = Math.min(parseInt(limit) || 100, 500); // Máximo 500 mensagens
     
     if (USE_POSTGRES) {
-      // PostgreSQL
-      const result = await pgQuery(
-        `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
-         FROM chat_messages 
-         WHERE videoId = $1 
-         ORDER BY createdAt DESC 
-         LIMIT $2`,
-        [videoId, limitNum]
-      );
-      console.log(`[CHAT] 📥 Carregadas ${result.rows.length} mensagens do vídeo ${videoId}`);
-      return res.json(result.rows.reverse()); // Reverter para ordem cronológica
+      // PostgreSQL - Tentar com email/role primeiro, se falhar, tenta sem
+      try {
+        const result = await pgQuery(
+          `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
+           FROM chat_messages 
+           WHERE videoId = $1 
+           ORDER BY createdAt DESC 
+           LIMIT $2`,
+          [videoId, limitNum]
+        );
+        console.log(`[CHAT] 📥 Carregadas ${result.rows.length} mensagens (com role) do vídeo ${videoId}`);
+        return res.json(result.rows.reverse()); // Reverter para ordem cronológica
+      } catch (err) {
+        console.warn('[CHAT] Campos email/role não existem, tentando sem eles...', err.message);
+        // Fallback: tentar sem os campos novos
+        const result = await pgQuery(
+          `SELECT id, videoId, user, text, timestamp, createdAt 
+           FROM chat_messages 
+           WHERE videoId = $1 
+           ORDER BY createdAt DESC 
+           LIMIT $2`,
+          [videoId, limitNum]
+        );
+        console.log(`[CHAT] 📥 Carregadas ${result.rows.length} mensagens (sem role) do vídeo ${videoId}`);
+        return res.json(result.rows.reverse()); // Reverter para ordem cronológica
+      }
     } else {
       // SQLite
-      const messages = await dbAll(
-        `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
-         FROM chat_messages 
-         WHERE videoId = ? 
-         ORDER BY createdAt DESC 
-         LIMIT ?`,
-        [videoId, limitNum]
-      );
-      console.log(`[CHAT] 📥 Carregadas ${messages.length} mensagens do vídeo ${videoId}`);
-      return res.json(messages.reverse()); // Reverter para ordem cronológica
+      try {
+        const messages = await dbAll(
+          `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
+           FROM chat_messages 
+           WHERE videoId = ? 
+           ORDER BY createdAt DESC 
+           LIMIT ?`,
+          [videoId, limitNum]
+        );
+        console.log(`[CHAT] 📥 Carregadas ${messages.length} mensagens (com role) do vídeo ${videoId}`);
+        return res.json(messages.reverse()); // Reverter para ordem cronológica
+      } catch (err) {
+        console.warn('[CHAT] Campos email/role não existem em SQLite, tentando sem eles...', err.message);
+        // Fallback: tentar sem os campos novos
+        const messages = await dbAll(
+          `SELECT id, videoId, user, text, timestamp, createdAt 
+           FROM chat_messages 
+           WHERE videoId = ? 
+           ORDER BY createdAt DESC 
+           LIMIT ?`,
+          [videoId, limitNum]
+        );
+        console.log(`[CHAT] 📥 Carregadas ${messages.length} mensagens (sem role) do vídeo ${videoId}`);
+        return res.json(messages.reverse()); // Reverter para ordem cronológica
+      }
     }
   } catch (err) {
     console.error('[CHAT] ❌ Erro ao carregar mensagens de chat:', err);
-    return res.status(500).json({ error: 'Failed to load messages' });
+    return res.status(500).json({ error: 'Failed to load messages', details: err.message });
   }
 });
 
