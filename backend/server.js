@@ -1395,7 +1395,7 @@ app.post('/api/chat', express.json(), async (req, res) => {
     
     // Validações básicas
     if (!videoId || !user || !text) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ error: 'Missing required fields: videoId, user, text are required' });
     }
     
     // Limpar texto contra XSS
@@ -1430,25 +1430,30 @@ app.post('/api/chat', express.json(), async (req, res) => {
         
         return res.json({ success: true, id: result.rows[0].id });
       } catch (err) {
-        console.warn('[CHAT] Colunas email/role não existem, salvando sem elas...', err.message);
-        const result = await pgQuery(
-          `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
-          [videoId, cleanUser, cleanText, timestamp]
-        );
-        console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.rows[0].id}`);
-        
-        // ✨ Broadcast via WebSocket
-        const messageToSend = {
-          id: result.rows[0].id,
-          videoId,
-          user: cleanUser,
-          text: cleanText,
-          timestamp,
-          createdAt: new Date().toISOString()
-        };
-        broadcastChatMessage(videoId, messageToSend);
-        
-        return res.json({ success: true, id: result.rows[0].id });
+        console.warn('[CHAT] Erro ao salvar com email/role:', err.message);
+        try {
+          const result = await pgQuery(
+            `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
+            [videoId, cleanUser, cleanText, timestamp]
+          );
+          console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.rows[0].id}`);
+          
+          // ✨ Broadcast via WebSocket
+          const messageToSend = {
+            id: result.rows[0].id,
+            videoId,
+            user: cleanUser,
+            text: cleanText,
+            timestamp,
+            createdAt: new Date().toISOString()
+          };
+          broadcastChatMessage(videoId, messageToSend);
+          
+          return res.json({ success: true, id: result.rows[0].id });
+        } catch (err2) {
+          console.error('[CHAT] ❌ Erro ao salvar mensagem (PostgreSQL):', err2);
+          return res.status(500).json({ error: 'Failed to save message', details: err2.message });
+        }
       }
     } else {
       // SQLite - Tentar com email/role, se falhar, sem eles
@@ -1474,29 +1479,34 @@ app.post('/api/chat', express.json(), async (req, res) => {
         
         return res.json({ success: true, id: result.lastID });
       } catch (err) {
-        console.warn('[CHAT] Colunas email/role não existem, salvando sem elas...', err.message);
-        const result = await dbRun(
-          `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES (?, ?, ?, ?)`,
-          [videoId, cleanUser, cleanText, timestamp]
-        );
-        console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.lastID}`);
-        
-        // ✨ Broadcast via WebSocket
-        const messageToSend = {
-          id: result.lastID,
-          videoId,
-          user: cleanUser,
-          text: cleanText,
-          timestamp,
-          createdAt: new Date().toISOString()
-        };
-        broadcastChatMessage(videoId, messageToSend);
-        
-        return res.json({ success: true, id: result.lastID });
+        console.warn('[CHAT] Erro ao salvar com email/role:', err.message);
+        try {
+          const result = await dbRun(
+            `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES (?, ?, ?, ?)`,
+            [videoId, cleanUser, cleanText, timestamp]
+          );
+          console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.lastID}`);
+          
+          // ✨ Broadcast via WebSocket
+          const messageToSend = {
+            id: result.lastID,
+            videoId,
+            user: cleanUser,
+            text: cleanText,
+            timestamp,
+            createdAt: new Date().toISOString()
+          };
+          broadcastChatMessage(videoId, messageToSend);
+          
+          return res.json({ success: true, id: result.lastID });
+        } catch (err2) {
+          console.error('[CHAT] ❌ Erro ao salvar mensagem (SQLite):', err2);
+          return res.status(500).json({ error: 'Failed to save message', details: err2.message });
+        }
       }
     }
   } catch (err) {
-    console.error('[CHAT] ❌ Erro ao salvar mensagem de chat:', err);
+    console.error('[CHAT] ❌ Erro crítico ao salvar mensagem de chat:', err);
     return res.status(500).json({ error: 'Failed to save message', details: err.message });
   }
 });

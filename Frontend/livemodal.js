@@ -1044,15 +1044,21 @@ window.LiveModal = (function () {
          */
         async saveChatToServer(message) {
             try {
-                const response = await fetch('/api/chat', {
+                const apiUrl = window.location.origin + '/api/chat';
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(message)
                 });
 
                 if (!response.ok) {
-                    console.error('[LiveModal] Erro ao salvar mensagem:', response.status);
+                    const errorText = await response.text();
+                    console.error('[LiveModal] Erro ao salvar mensagem:', response.status, errorText);
+                    return;
                 }
+                
+                const data = await response.json();
+                console.log('[LiveModal] Mensagem salva com sucesso:', data);
             } catch (error) {
                 console.error('[LiveModal] Erro de conexão ao salvar mensagem:', error);
             }
