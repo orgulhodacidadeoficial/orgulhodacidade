@@ -133,7 +133,8 @@ async function abrirTransmissaoComHistorico(url, titulo, videoId) {
     
     // Carregar histórico
     try {
-        const response = await fetch(`/api/chat?videoId=${videoId}`);
+        const apiUrl = window.location.origin + `/api/chat?videoId=${videoId}`;
+        const response = await fetch(apiUrl);
         const mensagens = await response.json();
         window.LiveModal.messages = mensagens;
         window.LiveModal.renderChat();

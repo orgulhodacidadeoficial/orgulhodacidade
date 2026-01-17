@@ -185,7 +185,8 @@ window.LiveModal = (function () {
          */
         async loadAdmListFromServer() {
             try {
-                const response = await fetch('/api/chat/admins-list');
+                const apiUrl = window.location.origin + '/api/chat/admins-list';
+                const response = await fetch(apiUrl);
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data.admins)) {
@@ -229,7 +230,7 @@ window.LiveModal = (function () {
                 
                 // Notificar servidor que você é o proprietário
                 try {
-                    const propUrl = '/api/chat/proprietario';
+                    const propUrl = window.location.origin + '/api/chat/proprietario';
                     console.log(`[DEBUG] Enviando proprietário para servidor: ${this.userName} em videoId: ${this.currentVideoId}`);
                     
                     const response = await fetch(propUrl, {
@@ -720,7 +721,8 @@ window.LiveModal = (function () {
             if (confirm('⚠️ Tem certeza que deseja limpar todo o chat?')) {
                 try {
                     // Enviar comando para servidor
-                    const response = await fetch('/api/chat/clear', {
+                    const apiUrl = window.location.origin + '/api/chat/clear';
+                    const response = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',  // Importante: enviar cookies de sessão
@@ -778,7 +780,8 @@ window.LiveModal = (function () {
             
             try {
                 // Chamar endpoint do servidor para promover ADM (persistir no banco de dados)
-                const response = await fetch('/api/chat/promote-admin', {
+                const apiUrl = window.location.origin + '/api/chat/promote-admin';
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
@@ -830,7 +833,8 @@ window.LiveModal = (function () {
 
             try {
                 // Chamar endpoint do servidor para remover ADM (persistir no banco de dados)
-                const response = await fetch('/api/chat/demote-admin', {
+                const apiUrl = window.location.origin + '/api/chat/demote-admin';
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
@@ -1071,7 +1075,8 @@ window.LiveModal = (function () {
             try {
                 if (!this.currentVideoId) return;
 
-                const response = await fetch(`/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`);
+                const apiUrl = window.location.origin + `/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`;
+                const response = await fetch(apiUrl);
                 if (!response.ok) {
                     console.warn('[LiveModal] Não foi possível carregar chat do servidor');
                     return;
@@ -1176,7 +1181,7 @@ window.LiveModal = (function () {
                     
                     // Sincronizar proprietário do servidor
                     try {
-                        const propUrl = `/api/chat/proprietario?videoId=${encodeURIComponent(this.currentVideoId)}`;
+                        const propUrl = window.location.origin + `/api/chat/proprietario?videoId=${encodeURIComponent(this.currentVideoId)}`;
                         const propResp = await fetch(propUrl);
                         if (propResp.ok) {
                             const propData = await propResp.json();
@@ -1189,7 +1194,8 @@ window.LiveModal = (function () {
                         console.error(`[DEBUG] Erro ao sincronizar proprietário:`, e);
                     }
                     
-                    const response = await fetch(`/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`);
+                    const apiUrl = window.location.origin + `/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`;
+                    const response = await fetch(apiUrl);
                     if (!response.ok) return;
 
                     const serverMessages = await response.json();
