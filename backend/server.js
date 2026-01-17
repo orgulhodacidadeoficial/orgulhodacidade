@@ -1283,6 +1283,40 @@ app.delete('/api/chat/:id', async (req, res) => {
   }
 });
 
+// POST /api/chat/clear - Limpar todas as mensagens de um vídeo (apenas proprietario/adm)
+app.post('/api/chat/clear', express.json(), async (req, res) => {
+  try {
+    const { videoId, userRole, userName } = req.body;
+    
+    if (!videoId) {
+      return res.status(400).json({ error: 'videoId is required' });
+    }
+    
+    // Verificar se é admin do sistema OU proprietario/adm do chat
+    const isSystemAdmin = req.session && req.session.isAdmin;
+    const isChatAdmin = userRole === 'ADM' || userRole === 'PROPRIETARIO';
+    
+    if (!isSystemAdmin && !isChatAdmin) {
+      console.warn(`[CHAT/CLEAR] Tentativa de limpar chat por ${userName} (role: ${userRole})`);
+      return res.status(403).json({ error: 'Only admin/proprietario can clear chat' });
+    }
+    
+    if (USE_POSTGRES) {
+      // PostgreSQL
+      await pgQuery(`DELETE FROM chat_messages WHERE videoId = $1`, [videoId]);
+    } else {
+      // SQLite
+      await dbRun(`DELETE FROM chat_messages WHERE videoId = ?`, [videoId]);
+    }
+    
+    console.log(`[CHAT] ✅ Chat do vídeo ${videoId} limpo por ${userName} (${userRole})`);
+    return res.json({ success: true, message: 'Chat cleared' });
+  } catch (err) {
+    console.error('Erro ao limpar chat:', err);
+    return res.status(500).json({ error: 'Failed to clear chat', details: err.message });
+  }
+});
+
 // GET /api/photos - retorna photos.json (público)
 app.get('/api/photos', async (req, res) => {
   try {

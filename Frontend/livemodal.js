@@ -705,8 +705,11 @@ window.LiveModal = (function () {
                     const response = await fetch('/api/chat/clear', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',  // Importante: enviar cookies de sessão
                         body: JSON.stringify({
                             videoId: this.currentVideoId,
+                            userRole: this.userRole,
+                            userName: this.userName,
                             clearedBy: this.userName
                         })
                     });
@@ -726,11 +729,13 @@ window.LiveModal = (function () {
                         console.log(`[COMANDO] ${this.userName} (${this.userRole}) limpou o chat`);
                         alert('✅ Chat limpo com sucesso!');
                     } else {
-                        alert('❌ Erro ao limpar o chat no servidor');
+                        const errorData = await response.json();
+                        console.error('[ERRO CLEAR]', response.status, errorData);
+                        alert(`❌ Erro ao limpar chat: ${errorData.error || 'Erro desconhecido'}`);
                     }
                 } catch (error) {
                     console.error('Erro ao limpar chat:', error);
-                    alert('❌ Erro ao limpar o chat');
+                    alert('❌ Erro ao limpar o chat: ' + error.message);
                 }
             }
         },
