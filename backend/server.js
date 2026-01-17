@@ -160,6 +160,8 @@ async function initializeTables() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         videoId TEXT NOT NULL,
         user TEXT NOT NULL,
+        email TEXT,
+        role TEXT,
         text TEXT NOT NULL,
         timestamp TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -247,6 +249,8 @@ async function initializePgTables() {
         id SERIAL PRIMARY KEY,
         videoId TEXT NOT NULL,
         user TEXT NOT NULL,
+        email TEXT,
+        role TEXT,
         text TEXT NOT NULL,
         timestamp TEXT,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -1186,7 +1190,7 @@ app.get('/api/eventos', async (req, res) => {
 // POST /api/chat - Salva uma mensagem de chat
 app.post('/api/chat', express.json(), async (req, res) => {
   try {
-    const { videoId, user, text, timestamp } = req.body;
+    const { videoId, user, email, role, text, timestamp } = req.body;
     
     // Validações básicas
     if (!videoId || !user || !text) {
@@ -1196,24 +1200,30 @@ app.post('/api/chat', express.json(), async (req, res) => {
     // Limpar texto contra XSS
     const cleanText = text.substring(0, 200); // Limite 200 caracteres
     const cleanUser = user.substring(0, 100);
+    const cleanEmail = email ? email.substring(0, 100) : null;
+    const cleanRole = role ? role.substring(0, 20) : 'USUARIO';
+    
+    console.log(`[CHAT] Salvando mensagem: ${cleanUser} (${cleanRole}) no vídeo ${videoId}`);
     
     if (USE_POSTGRES) {
       // PostgreSQL
       const result = await pgQuery(
-        `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
-        [videoId, cleanUser, cleanText, timestamp]
+        `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
       );
+      console.log(`[CHAT] ✅ Mensagem salva com ID: ${result.rows[0].id}`);
       return res.json({ success: true, id: result.rows[0].id });
     } else {
       // SQLite
       const result = await dbRun(
-        `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES (?, ?, ?, ?)`,
-        [videoId, cleanUser, cleanText, timestamp]
+        `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
+        [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
       );
+      console.log(`[CHAT] ✅ Mensagem salva com ID: ${result.lastID}`);
       return res.json({ success: true, id: result.lastID });
     }
   } catch (err) {
-    console.error('Erro ao salvar mensagem de chat:', err);
+    console.error('[CHAT] ❌ Erro ao salvar mensagem de chat:', err);
     return res.status(500).json({ error: 'Failed to save message' });
   }
 });
@@ -1232,28 +1242,30 @@ app.get('/api/chat', async (req, res) => {
     if (USE_POSTGRES) {
       // PostgreSQL
       const result = await pgQuery(
-        `SELECT id, videoId, user, text, timestamp, createdAt 
+        `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
          FROM chat_messages 
          WHERE videoId = $1 
          ORDER BY createdAt DESC 
          LIMIT $2`,
         [videoId, limitNum]
       );
+      console.log(`[CHAT] 📥 Carregadas ${result.rows.length} mensagens do vídeo ${videoId}`);
       return res.json(result.rows.reverse()); // Reverter para ordem cronológica
     } else {
       // SQLite
       const messages = await dbAll(
-        `SELECT id, videoId, user, text, timestamp, createdAt 
+        `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
          FROM chat_messages 
          WHERE videoId = ? 
          ORDER BY createdAt DESC 
          LIMIT ?`,
         [videoId, limitNum]
       );
+      console.log(`[CHAT] 📥 Carregadas ${messages.length} mensagens do vídeo ${videoId}`);
       return res.json(messages.reverse()); // Reverter para ordem cronológica
     }
   } catch (err) {
-    console.error('Erro ao carregar mensagens de chat:', err);
+    console.error('[CHAT] ❌ Erro ao carregar mensagens de chat:', err);
     return res.status(500).json({ error: 'Failed to load messages' });
   }
 });
