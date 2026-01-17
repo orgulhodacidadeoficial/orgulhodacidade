@@ -543,6 +543,16 @@ app.post('/api/upload', upload.array('photos', 10), async (req, res) => {
       added.push(obj);
     }
     await fsPromises.writeFile(photosFile, JSON.stringify(list, null, 2), 'utf8');
+    // ✅ Salvar em PostgreSQL para persistência no Render
+    if (USE_POSTGRES) {
+      try {
+        await pgQuery(`DELETE FROM photos`);
+        await pgQuery(`INSERT INTO photos (data) VALUES ($1)`, [JSON.stringify(list)]);
+        console.log('[upload] ✅ Fotos salvas em PostgreSQL');
+      } catch (e) {
+        console.warn('[upload] Aviso ao salvar em PostgreSQL:', e.message);
+      }
+    }
     // respond with added items
     res.json({ ok: true, added });
     try { sendSseEvent('carousel-update', { type: 'upload', added }); } catch (e) {}
@@ -1259,7 +1269,24 @@ app.get('/api/events', async (req, res) => {
 // Compatibilidade (PT-BR): GET /api/eventos
 app.get('/api/eventos', async (req, res) => {
   try {
-    const events = await readJson('events');
+    let events = [];
+    
+    // ✅ Tentar ler do PostgreSQL primeiro (persistente no Render)
+    if (USE_POSTGRES) {
+      try {
+        const result = await pgQuery(`SELECT data FROM events ORDER BY createdAt DESC LIMIT 1`);
+        if (result.rows && result.rows.length > 0) {
+          events = JSON.parse(result.rows[0].data);
+          console.log('[GET /api/eventos] ✅ Carregadas do PostgreSQL');
+          return res.json(events || []);
+        }
+      } catch (e) {
+        console.warn('[GET /api/eventos] Aviso ao ler PostgreSQL:', e.message);
+      }
+    }
+    
+    // Fallback para JSON (dev local)
+    events = await readJson('events');
     return res.json(events || []);
   } catch (err) {
     console.error('Erro carregando events.json (alias /api/eventos):', err);
@@ -1649,11 +1676,51 @@ app.post('/api/photos', requireAdmin, async (req, res) => {
     // ensure basic shape
     const safe = arr.map(item => ({ src: item.src || '', name: item.name || '', role: item.role || '', categoria: item.categoria || 'brincantes' }));
     await writeJson('photos', safe);
+    
+    // ✅ Salvar em PostgreSQL para persistência no Render
+    if (USE_POSTGRES) {
+      try {
+        await pgQuery(`DELETE FROM photos`);
+        await pgQuery(`INSERT INTO photos (data) VALUES ($1)`, [JSON.stringify(safe)]);
+        console.log('[POST /api/photos] ✅ Fotos salvas em PostgreSQL');
+      } catch (e) {
+        console.warn('[POST /api/photos] Aviso ao salvar em PostgreSQL:', e.message);
+      }
+    }
+    
     try { broadcast({ type: 'brincantesUpdated', count: safe.filter(p => (p.categoria === 'brincantes' || p.categoria === 'carrossel-brincantes')).length }); } catch (e) {}
     try { broadcast({ type: 'photosUpdated', count: safe.length }); } catch (e) {}
     return res.json({ ok: true });
   } catch (err) {
     console.error('Erro salvando photos.json:', err);
+    return res.status(500).json({ error: 'failed' });
+  }
+});
+
+// ✅ GET /api/fotos - Carrega fotos do PostgreSQL (persistente no Render) ou fallback JSON
+app.get('/api/fotos', async (req, res) => {
+  try {
+    let photos = [];
+    
+    // Tentar ler do PostgreSQL primeiro (persistente no Render)
+    if (USE_POSTGRES) {
+      try {
+        const result = await pgQuery(`SELECT data FROM photos ORDER BY createdAt DESC LIMIT 1`);
+        if (result.rows && result.rows.length > 0) {
+          photos = JSON.parse(result.rows[0].data);
+          console.log('[GET /api/fotos] ✅ Carregadas do PostgreSQL');
+          return res.json(photos || []);
+        }
+      } catch (e) {
+        console.warn('[GET /api/fotos] Aviso ao ler PostgreSQL:', e.message);
+      }
+    }
+    
+    // Fallback para JSON (dev local)
+    photos = await readJson('photos');
+    return res.json(photos || []);
+  } catch (err) {
+    console.error('[GET /api/fotos] erro:', err);
     return res.status(500).json({ error: 'failed' });
   }
 });
@@ -1689,6 +1756,16 @@ app.post('/api/carousel-titulo/delete', requireAdmin, async (req, res) => {
     }
     
     await writeJson('photos', filtered);
+    // ✅ Atualizar PostgreSQL
+    if (USE_POSTGRES) {
+      try {
+        await pgQuery(`DELETE FROM photos`);
+        await pgQuery(`INSERT INTO photos (data) VALUES ($1)`, [JSON.stringify(filtered)]);
+        console.log('[POST /api/carousel-titulo/delete] ✅ Atualizado PostgreSQL');
+      } catch (e) {
+        console.warn('[POST /api/carousel-titulo/delete] Aviso ao atualizar PostgreSQL:', e.message);
+      }
+    }
     // notify SSE clients
     try { sendSseEvent('carousel-update', { type: 'delete', src }); } catch (e) {}
     return res.json({ ok: true });
@@ -1716,6 +1793,16 @@ app.post('/api/photos/delete', requireAdmin, async (req, res) => {
     }
     
     await writeJson('photos', filtered);
+    // ✅ Atualizar PostgreSQL
+    if (USE_POSTGRES) {
+      try {
+        await pgQuery(`DELETE FROM photos`);
+        await pgQuery(`INSERT INTO photos (data) VALUES ($1)`, [JSON.stringify(filtered)]);
+        console.log('[POST /api/photos/delete] ✅ Atualizado PostgreSQL');
+      } catch (e) {
+        console.warn('[POST /api/photos/delete] Aviso ao atualizar PostgreSQL:', e.message);
+      }
+    }
     // notify all SSE clients in realtime
     try { sendSseEvent('photos-update', { type: 'delete', src }); } catch (e) {}
     return res.json({ ok: true });
@@ -1774,6 +1861,18 @@ app.post('/api/events', async (req, res) => {
     const arr = Array.isArray(req.body) ? req.body : (req.body && Array.isArray(req.body.events) ? req.body.events : null);
     if (!Array.isArray(arr)) return res.status(400).json({ error: 'Esperado um array de eventos' });
     await writeJson('events', arr);
+    
+    // ✅ Salvar em PostgreSQL para persistência no Render
+    if (USE_POSTGRES) {
+      try {
+        await pgQuery(`DELETE FROM events`);
+        await pgQuery(`INSERT INTO events (data) VALUES ($1)`, [JSON.stringify(arr)]);
+        console.log('[POST /api/events] ✅ Apresentações salvas em PostgreSQL');
+      } catch (e) {
+        console.warn('[POST /api/events] Aviso ao salvar em PostgreSQL:', e.message);
+      }
+    }
+    
     // Notify connected websocket clients that events were updated
     try { broadcast({ type: 'eventsUpdated', count: arr.length }); } catch (e) { /* ignore */ }
     return res.json({ ok: true });
