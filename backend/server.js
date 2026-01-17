@@ -922,26 +922,28 @@ app.post('/api/inscricao', async (req, res) => {
     
     console.log('Nova inscrição - IP detectado:', clientIp);
     
-    // Verificar se este IP já se inscreveu
-    const inscricoes = await readJson('inscricoes');
-    console.log('Total de inscrições no banco:', inscricoes.length);
+    // Validação: Verificar se o EMAIL já se inscreveu (mais confiável que IP)
+    const { email } = req.body;
     
-    if (inscricoes && inscricoes.length > 0) {
-      console.log('IPs registrados:', inscricoes.map(insc => insc.ip));
+    if (email) {
+      const inscricoes = await readJson('inscricoes');
+      console.log('Total de inscrições no banco:', inscricoes.length);
       
-      const jaInscrito = inscricoes.some(insc => {
-        const ipNormalizado = (insc.ip || '').replace(/^::ffff:/, '');
-        const ipIguais = ipNormalizado === clientIp;
-        console.log(`Comparando: "${ipNormalizado}" === "${clientIp}" -> ${ipIguais}`);
-        return ipIguais;
-      });
-      
-      console.log('Resultado jaInscrito:', jaInscrito);
-      
-      if (jaInscrito) {
-        return res.status(400).json({ 
-          error: 'Você já realizou uma inscrição neste dispositivo. Apenas uma inscrição por dispositivo é permitida.' 
+      if (inscricoes && inscricoes.length > 0) {
+        const jaInscrito = inscricoes.some(insc => {
+          const emailNormalizado = (insc.email || '').toLowerCase().trim();
+          const emailIgual = emailNormalizado === email.toLowerCase().trim();
+          if (emailIgual) {
+            console.log(`[INSCRIÇÃO] Email ${email} já inscrito anteriormente`);
+          }
+          return emailIgual;
         });
+        
+        if (jaInscrito) {
+          return res.status(400).json({ 
+            error: 'Este email já foi inscrito anteriormente. Uma inscrição por email é permitida.' 
+          });
+        }
       }
     }
     
@@ -949,7 +951,9 @@ app.post('/api/inscricao', async (req, res) => {
       receivedAt: Date.now(),
       ip: clientIp,
     });
+    
     await appendToJson('inscricoes', entry);
+    console.log(`[INSCRIÇÃO] ✅ Nova inscrição salva com sucesso para ${email || 'usuário anônimo'}`);
     res.json({ ok: true });
   } catch (err) {
     console.error('inscricao error', err);
