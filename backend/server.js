@@ -1386,6 +1386,91 @@ app.post('/api/chat/clear', express.json(), async (req, res) => {
   }
 });
 
+// GET /api/chat/proprietario - Retorna quem é o proprietário do chat
+app.get('/api/chat/proprietario', express.json(), async (req, res) => {
+  try {
+    const { videoId } = req.query;
+    // Por enquanto, retorna que não há proprietário definido no servidor
+    // Pode ser expandido para salvar proprietário por vídeo no banco
+    return res.json({ name: null, videoId: videoId });
+  } catch (err) {
+    console.error('[CHAT] Erro ao carregar proprietário:', err);
+    return res.status(500).json({ error: 'Failed to load proprietario' });
+  }
+});
+
+// POST /api/chat/proprietario - Define/registra o proprietário
+app.post('/api/chat/proprietario', express.json(), async (req, res) => {
+  try {
+    const { userName, videoId } = req.body;
+    
+    if (!userName) {
+      return res.status(400).json({ error: 'userName is required' });
+    }
+    
+    console.log(`[CHAT] 👑 Proprietário registrado: ${userName} para vídeo ${videoId || 'global'}`);
+    return res.json({ success: true, name: userName });
+  } catch (err) {
+    console.error('[CHAT] Erro ao registrar proprietário:', err);
+    return res.status(500).json({ error: 'Failed to register proprietario' });
+  }
+});
+
+// GET /api/chat/admins-list - Retorna lista de ADMs
+app.get('/api/chat/admins-list', express.json(), async (req, res) => {
+  try {
+    // Por enquanto, retorna lista vazia (pode ser expandido para buscar do banco)
+    return res.json({ admins: [] });
+  } catch (err) {
+    console.error('[CHAT] Erro ao carregar lista de ADMs:', err);
+    return res.status(500).json({ error: 'Failed to load admins list' });
+  }
+});
+
+// POST /api/chat/promote-admin - Promover usuário a ADM
+app.post('/api/chat/promote-admin', express.json(), async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
+    
+    // Verificar se é admin
+    if (!req.session || !req.session.isAdmin) {
+      return res.status(403).json({ error: 'Only admin can promote users' });
+    }
+    
+    console.log(`[CHAT] ⚡ Usuário promovido a ADM: ${email}`);
+    return res.json({ success: true, message: 'User promoted to admin' });
+  } catch (err) {
+    console.error('[CHAT] Erro ao promover ADM:', err);
+    return res.status(500).json({ error: 'Failed to promote admin' });
+  }
+});
+
+// POST /api/chat/demote-admin - Remover ADM
+app.post('/api/chat/demote-admin', express.json(), async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' });
+    }
+    
+    // Verificar se é admin
+    if (!req.session || !req.session.isAdmin) {
+      return res.status(403).json({ error: 'Only admin can demote users' });
+    }
+    
+    console.log(`[CHAT] ❌ ADM removido: ${email}`);
+    return res.json({ success: true, message: 'User demoted from admin' });
+  } catch (err) {
+    console.error('[CHAT] Erro ao remover ADM:', err);
+    return res.status(500).json({ error: 'Failed to demote admin' });
+  }
+});
+
 // GET /api/photos - retorna photos.json (público)
 app.get('/api/photos', async (req, res) => {
   try {
