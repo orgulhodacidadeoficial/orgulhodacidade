@@ -915,41 +915,39 @@ app.get('/api/auth/me', async (req, res) => {
 
 app.post('/api/inscricao', async (req, res) => {
   try {
-    // Extrair e normalizar IP
-    let clientIp = req.ip || req.connection.remoteAddress || 'unknown';
-    // Remover "::ffff:" do IPv4 encapsulado em IPv6
-    clientIp = clientIp.replace(/^::ffff:/, '');
+    const { deviceId } = req.body;
     
-    console.log('Nova inscrição - IP detectado:', clientIp);
+    if (!deviceId) {
+      return res.status(400).json({ 
+        error: 'Erro: identificador do dispositivo não encontrado. Tente limpar o cache do navegador e inscrever novamente.' 
+      });
+    }
     
-    // Verificar se este IP já se inscreveu
+    console.log('Nova inscrição - DeviceId detectado:', deviceId);
+    
+    // Verificar se este deviceId já se inscreveu
     const inscricoes = await readJson('inscricoes');
     console.log('Total de inscrições no banco:', inscricoes.length);
     
     if (inscricoes && inscricoes.length > 0) {
-      console.log('IPs registrados:', inscricoes.map(insc => insc.ip));
-      
       const jaInscrito = inscricoes.some(insc => {
-        const ipNormalizado = (insc.ip || '').replace(/^::ffff:/, '');
-        const ipIguais = ipNormalizado === clientIp;
-        console.log(`Comparando: "${ipNormalizado}" === "${clientIp}" -> ${ipIguais}`);
-        return ipIguais;
+        return insc.deviceId === deviceId;
       });
       
-      console.log('Resultado jaInscrito:', jaInscrito);
-      
       if (jaInscrito) {
+        console.log(`[INSCRIÇÃO] DeviceId ${deviceId} já inscrito anteriormente`);
         return res.status(400).json({ 
-          error: 'Você já realizou uma inscrição neste dispositivo. Apenas uma inscrição por dispositivo é permitida.' 
+          error: 'Você já realizou uma inscrição neste navegador/dispositivo. Apenas uma inscrição por dispositivo é permitida.' 
         });
       }
     }
     
     const entry = Object.assign({}, req.body, {
       receivedAt: Date.now(),
-      ip: clientIp,
+      ip: req.ip || 'unknown'
     });
     await appendToJson('inscricoes', entry);
+    console.log(`[INSCRIÇÃO] ✅ Nova inscrição salva com sucesso para deviceId ${deviceId}`);
     res.json({ ok: true });
   } catch (err) {
     console.error('inscricao error', err);

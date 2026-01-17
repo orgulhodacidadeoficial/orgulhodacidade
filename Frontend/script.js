@@ -62,6 +62,17 @@
 
 // Função global usada pelo formulário em inscricao.html
 // Retorna false para evitar submissão tradicional.
+// Gerar ou recuperar deviceId único para este navegador/dispositivo
+function getOrCreateDeviceId() {
+    let deviceId = localStorage.getItem('inscricao_device_id');
+    if (!deviceId) {
+        // Gerar ID único baseado em timestamp + random
+        deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('inscricao_device_id', deviceId);
+    }
+    return deviceId;
+}
+
 window.handleInscricao = async function handleInscricao(e) {
     e.preventDefault();
     const form = document.getElementById('inscricaoForm');
@@ -87,7 +98,8 @@ window.handleInscricao = async function handleInscricao(e) {
         telefone: (form.telefone && form.telefone.value || '').trim(),
         bairro: (form.bairro && form.bairro.value || '').trim(),
         Rede_sociais: (form.Rede_sociais && form.Rede_sociais.value || '').trim(),
-        email: (form.email && form.email.value || '').trim()
+        email: (form.email && form.email.value || '').trim(),
+        deviceId: getOrCreateDeviceId()
     };
 
     // Mostra um modal de confirmação com botão OK (acessível)
