@@ -1382,66 +1382,68 @@ app.get('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'videoId is required' });
     }
     
-    const limitNum = Math.min(parseInt(limit) || 100, 500); // Máximo 500 mensagens
+    const limitNum = Math.min(parseInt(limit) || 100, 500);
     
     if (USE_POSTGRES) {
-      // PostgreSQL - Tentar com email/role primeiro, se falhar, tenta sem
       try {
         const result = await pgQuery(
           `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
            FROM chat_messages 
            WHERE videoId = $1 
-           ORDER BY createdAt DESC 
+           ORDER BY createdAt ASC 
            LIMIT $2`,
           [videoId, limitNum]
         );
-        console.log(`[CHAT] 📥 Carregadas ${result.rows.length} mensagens (com role) do vídeo ${videoId}`);
-        return res.json(result.rows.reverse()); // Reverter para ordem cronológica
+        return res.json(result.rows || []);
       } catch (err) {
-        console.warn('[CHAT] Campos email/role não existem, tentando sem eles...', err.message);
-        // Fallback: tentar sem os campos novos
-        const result = await pgQuery(
-          `SELECT id, videoId, user, text, timestamp, createdAt 
-           FROM chat_messages 
-           WHERE videoId = $1 
-           ORDER BY createdAt DESC 
-           LIMIT $2`,
-          [videoId, limitNum]
-        );
-        console.log(`[CHAT] 📥 Carregadas ${result.rows.length} mensagens (sem role) do vídeo ${videoId}`);
-        return res.json(result.rows.reverse()); // Reverter para ordem cronológica
+        console.warn('[CHAT GET] PostgreSQL error, trying without email/role:', err.message);
+        try {
+          const result = await pgQuery(
+            `SELECT id, videoId, user, text, timestamp, createdAt 
+             FROM chat_messages 
+             WHERE videoId = $1 
+             ORDER BY createdAt ASC 
+             LIMIT $2`,
+            [videoId, limitNum]
+          );
+          return res.json(result.rows || []);
+        } catch (err2) {
+          console.error('[CHAT GET] PostgreSQL fallback also failed:', err2.message);
+          return res.json([]);
+        }
       }
     } else {
-      // SQLite
       try {
         const messages = await dbAll(
           `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
            FROM chat_messages 
            WHERE videoId = ? 
-           ORDER BY createdAt DESC 
+           ORDER BY createdAt ASC 
            LIMIT ?`,
           [videoId, limitNum]
         );
-        console.log(`[CHAT] 📥 Carregadas ${messages.length} mensagens (com role) do vídeo ${videoId}`);
-        return res.json(messages.reverse()); // Reverter para ordem cronológica
+        return res.json(messages || []);
       } catch (err) {
-        console.warn('[CHAT] Campos email/role não existem em SQLite, tentando sem eles...', err.message);
-        // Fallback: tentar sem os campos novos
-        const messages = await dbAll(
-          `SELECT id, videoId, user, text, timestamp, createdAt 
-           FROM chat_messages 
-           WHERE videoId = ? 
-           ORDER BY createdAt DESC 
-           LIMIT ?`,
-          [videoId, limitNum]
-        );
-        console.log(`[CHAT] 📥 Carregadas ${messages.length} mensagens (sem role) do vídeo ${videoId}`);
-        return res.json(messages.reverse()); // Reverter para ordem cronológica
+        console.warn('[CHAT GET] SQLite error, trying without email/role:', err.message);
+        try {
+          const messages = await dbAll(
+            `SELECT id, videoId, user, text, timestamp, createdAt 
+             FROM chat_messages 
+             WHERE videoId = ? 
+             ORDER BY createdAt ASC 
+             LIMIT ?`,
+            [videoId, limitNum]
+          );
+          return res.json(messages || []);
+        } catch (err2) {
+          console.error('[CHAT GET] SQLite fallback also failed:', err2.message);
+          return res.json([]);
+        }
       }
     }
   } catch (err) {
-    console.error('[CHAT] ❌ Erro ao carregar mensagens de chat:', err);
-    return res.status(500).json({ error: 'Failed to load messages', details: err.message });
+    console.error('[CHAT GET] Unexpected error:', err);
+    return res.status(500).json({ error: 'Internal server error', details: err.message });
   }
 });
 
