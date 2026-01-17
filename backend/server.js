@@ -168,9 +168,35 @@ async function initializeTables() {
       )
     `);
     
+    // Migração: Adicionar colunas email e role se não existirem (para compatibilidade)
+    await migrateChatMessagesTable();
+    
     console.log('Tabelas SQLite inicializadas com sucesso');
   } catch (err) {
     console.error('Erro inicializando tabelas:', err);
+  }
+}
+
+// Migração para chat_messages - Adiciona colunas faltando se necessário
+async function migrateChatMessagesTable() {
+  try {
+    // Verificar se as colunas existem
+    const tableInfo = await dbAll(`PRAGMA table_info(chat_messages)`);
+    const columnNames = tableInfo.map(col => col.name);
+    
+    if (!columnNames.includes('email')) {
+      console.log('[MIGRATE] Adicionando coluna email à tabela chat_messages');
+      await dbRun(`ALTER TABLE chat_messages ADD COLUMN email TEXT`);
+    }
+    
+    if (!columnNames.includes('role')) {
+      console.log('[MIGRATE] Adicionando coluna role à tabela chat_messages');
+      await dbRun(`ALTER TABLE chat_messages ADD COLUMN role TEXT DEFAULT 'USUARIO'`);
+    }
+    
+    console.log('[MIGRATE] ✅ chat_messages atualizada com sucesso');
+  } catch (err) {
+    console.error('[MIGRATE] Erro ao migrar chat_messages:', err);
   }
 }
 
@@ -257,9 +283,40 @@ async function initializePgTables() {
       )
     `);
     
+    // Migração: Adicionar colunas email e role se não existirem (para compatibilidade)
+    await migrateChatMessagesTablePg();
+    
     console.log('✅ Tabelas PostgreSQL inicializadas com sucesso');
   } catch (err) {
     console.error('Erro inicializando tabelas PostgreSQL:', err);
+  }
+}
+
+// Migração para PostgreSQL - Adiciona colunas faltando se necessário
+async function migrateChatMessagesTablePg() {
+  try {
+    // Verificar se as colunas existem
+    const result = await pgQuery(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'chat_messages'
+    `);
+    
+    const columnNames = result.rows.map(row => row.column_name);
+    
+    if (!columnNames.includes('email')) {
+      console.log('[MIGRATE PG] Adicionando coluna email à tabela chat_messages');
+      await pgQuery(`ALTER TABLE chat_messages ADD COLUMN email TEXT`);
+    }
+    
+    if (!columnNames.includes('role')) {
+      console.log('[MIGRATE PG] Adicionando coluna role à tabela chat_messages');
+      await pgQuery(`ALTER TABLE chat_messages ADD COLUMN role TEXT DEFAULT 'USUARIO'`);
+    }
+    
+    console.log('[MIGRATE PG] ✅ chat_messages atualizada com sucesso');
+  } catch (err) {
+    console.error('[MIGRATE PG] Erro ao migrar chat_messages:', err);
   }
 }
 
