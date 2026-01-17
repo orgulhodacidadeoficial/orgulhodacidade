@@ -570,6 +570,22 @@ app.post('/api/upload', upload.array('photos', 10), async (req, res) => {
 // has been stripped. A no-op `broadcast` function above keeps any existing
 // non-chat code that calls `broadcast(...)` safe.
 
+// CORS middleware - Permite requisições do frontend mesmo em diferentes portas/domínios
+app.use((req, res, next) => {
+  // Sempre permitir CORS em produção (Render)
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+
+  // Responder a requisições OPTIONS (preflight)
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
+
 // Session middleware
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
 app.use(session({
