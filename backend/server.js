@@ -957,6 +957,33 @@ app.post('/api/inscricao', async (req, res) => {
   }
 });
 
+// Endpoint para limpar inscricoes (USE COM CUIDADO)
+app.post('/api/inscricao/limpar', async (req, res) => {
+  try {
+    const { senha } = req.body;
+    if (senha !== 'admin123') {
+      return res.status(401).json({ error: 'Senha incorreta' });
+    }
+    
+    // Limpar arquivo JSON
+    await writeJson('inscricoes', []);
+    
+    // Limpar banco de dados PostgreSQL se existir
+    if (pool) {
+      try {
+        await pool.query('DELETE FROM inscricoes');
+      } catch (e) {
+        console.log('Banco PostgreSQL não disponível ou tabela não existe');
+      }
+    }
+    
+    res.json({ ok: true, message: 'Inscrições limpas com sucesso' });
+  } catch (err) {
+    console.error('Erro ao limpar inscrições:', err);
+    res.status(500).json({ error: 'Falha ao limpar' });
+  }
+});
+
 app.post('/api/contato', async (req, res) => {
   try {
     const entry = Object.assign({}, req.body, {
