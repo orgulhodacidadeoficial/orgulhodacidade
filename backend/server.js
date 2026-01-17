@@ -328,6 +328,10 @@ const sseClients = new Set();
 const wss = new WebSocket.Server({ server, path: '/ws/playlist' });
 const playlistClients = new Set();
 
+// WebSocket server para chat em tempo real
+const chatWss = new WebSocket.Server({ server, path: '/ws/chat' });
+const chatClients = new Map(); // { videoId: Set<WebSocket> }
+
 function sendSseEvent(eventName, data) {
   const payload = `event: ${eventName}\n` + `data: ${typeof data === 'string' ? data : JSON.stringify(data)}\n\n`;
   for (const res of sseClients) {
@@ -352,6 +356,25 @@ function broadcastPlaylist(action, data) {
     }
   }
   console.log(`[Playlist] Broadcast - Action: ${action}, Clientes: ${playlistClients.size}`);
+}
+
+// Broadcast de mensagens de chat para um videoId específico
+function broadcastChatMessage(videoId, message) {
+  const clients = chatClients.get(videoId);
+  if (!clients) return;
+  
+  const payload = JSON.stringify({ type: 'message', data: message, timestamp: new Date().toISOString() });
+  for (const client of clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      try {
+        client.send(payload);
+      } catch (e) {
+        console.warn('[Chat] Erro ao enviar mensagem:', e.message);
+        clients.delete(client);
+      }
+    }
+  }
+  console.log(`[Chat] Mensagem enviada para ${videoId} - Clientes: ${clients.size}`);
 }
 
 // Gerenciamento de playlist sincronizada
@@ -1310,6 +1333,59 @@ app.get('/api/eventos', async (req, res) => {
   }
 });
 
+// ===== WEBSOCKET CHAT =====
+// Handler para WebSocket de chat em tempo real
+chatWss.on('connection', (ws, req) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const videoId = url.searchParams.get('videoId');
+  
+  if (!videoId) {
+    console.log('[Chat WS] Conexão sem videoId, fechando...');
+    ws.close();
+    return;
+  }
+
+  // Adicionar cliente ao grupo do vídeo
+  if (!chatClients.has(videoId)) {
+    chatClients.set(videoId, new Set());
+  }
+  chatClients.get(videoId).add(ws);
+  
+  console.log(`[Chat WS] Nova conexão para ${videoId} - Total: ${chatClients.get(videoId).size}`);
+  
+  // Enviar confirmação de conexão
+  ws.send(JSON.stringify({ type: 'connected', videoId }));
+
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data);
+      console.log(`[Chat WS] Mensagem recebida para ${videoId}:`, message.type);
+      
+      // Rebroadcast para todos os outros clientes do mesmo videoId
+      if (message.type === 'message' && message.data) {
+        broadcastChatMessage(videoId, message.data);
+      }
+    } catch (e) {
+      console.warn('[Chat WS] Erro ao processar mensagem:', e.message);
+    }
+  });
+
+  ws.on('close', () => {
+    const clients = chatClients.get(videoId);
+    if (clients) {
+      clients.delete(ws);
+      console.log(`[Chat WS] Desconexão de ${videoId} - Total: ${clients.size}`);
+      if (clients.size === 0) {
+        chatClients.delete(videoId);
+      }
+    }
+  });
+
+  ws.on('error', (err) => {
+    console.warn('[Chat WS] Erro:', err.message);
+  });
+});
+
 // ===== CHAT ENDPOINTS =====
 
 // POST /api/chat - Salva uma mensagem de chat
@@ -1338,6 +1414,20 @@ app.post('/api/chat', express.json(), async (req, res) => {
           [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
         );
         console.log(`[CHAT] ✅ Mensagem salva (com role) com ID: ${result.rows[0].id}`);
+        
+        // ✨ Broadcast via WebSocket
+        const messageToSend = {
+          id: result.rows[0].id,
+          videoId,
+          user: cleanUser,
+          email: cleanEmail,
+          role: cleanRole,
+          text: cleanText,
+          timestamp,
+          createdAt: new Date().toISOString()
+        };
+        broadcastChatMessage(videoId, messageToSend);
+        
         return res.json({ success: true, id: result.rows[0].id });
       } catch (err) {
         console.warn('[CHAT] Colunas email/role não existem, salvando sem elas...', err.message);
@@ -1346,6 +1436,18 @@ app.post('/api/chat', express.json(), async (req, res) => {
           [videoId, cleanUser, cleanText, timestamp]
         );
         console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.rows[0].id}`);
+        
+        // ✨ Broadcast via WebSocket
+        const messageToSend = {
+          id: result.rows[0].id,
+          videoId,
+          user: cleanUser,
+          text: cleanText,
+          timestamp,
+          createdAt: new Date().toISOString()
+        };
+        broadcastChatMessage(videoId, messageToSend);
+        
         return res.json({ success: true, id: result.rows[0].id });
       }
     } else {
@@ -1356,6 +1458,20 @@ app.post('/api/chat', express.json(), async (req, res) => {
           [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
         );
         console.log(`[CHAT] ✅ Mensagem salva (com role) com ID: ${result.lastID}`);
+        
+        // ✨ Broadcast via WebSocket
+        const messageToSend = {
+          id: result.lastID,
+          videoId,
+          user: cleanUser,
+          email: cleanEmail,
+          role: cleanRole,
+          text: cleanText,
+          timestamp,
+          createdAt: new Date().toISOString()
+        };
+        broadcastChatMessage(videoId, messageToSend);
+        
         return res.json({ success: true, id: result.lastID });
       } catch (err) {
         console.warn('[CHAT] Colunas email/role não existem, salvando sem elas...', err.message);
@@ -1364,6 +1480,18 @@ app.post('/api/chat', express.json(), async (req, res) => {
           [videoId, cleanUser, cleanText, timestamp]
         );
         console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.lastID}`);
+        
+        // ✨ Broadcast via WebSocket
+        const messageToSend = {
+          id: result.lastID,
+          videoId,
+          user: cleanUser,
+          text: cleanText,
+          timestamp,
+          createdAt: new Date().toISOString()
+        };
+        broadcastChatMessage(videoId, messageToSend);
+        
         return res.json({ success: true, id: result.lastID });
       }
     }

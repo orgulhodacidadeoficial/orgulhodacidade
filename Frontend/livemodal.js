@@ -25,6 +25,8 @@ window.LiveModal = (function () {
         silencedUsers: {}, // { email: timestamp_fim }
         proprietarioName: null, // Será carregado do sessionStorage
         serverProprietario: null, // Proprietário definido no servidor (em tempo real)
+        chatWs: null, // WebSocket para chat em tempo real
+        wsConnecting: false, // Flag para evitar múltiplas conexões
 
         /**
          * Inicializa o modal
@@ -53,14 +55,18 @@ window.LiveModal = (function () {
             const header = document.createElement('div');
             header.className = 'live-modal-header';
             header.innerHTML = `
+                <div class="live-modal-header-left">
+                    <button class="live-modal-logout-btn" aria-label="Logout">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
                 <h2 class="live-modal-title">Transmissão ao vivo</h2>
-                <span class="live-modal-user-display" style="flex: 1; margin-left: 20px; font-size: 14px; display: flex; align-items: center; gap: 8px;"></span>
-                <button class="live-modal-logout-btn" style="padding: 6px 12px; margin-right: 8px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;" aria-label="Logout">
-                    Sair
-                </button>
-                <button class="live-modal-close-btn" aria-label="Fechar transmissão">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="live-modal-header-right">
+                    <span class="live-modal-user-display"></span>
+                    <button class="live-modal-close-btn" aria-label="Fechar transmissão">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             `;
             this.closeBtn = header.querySelector('.live-modal-close-btn');
             const logoutBtn = header.querySelector('.live-modal-logout-btn');
@@ -606,10 +612,22 @@ window.LiveModal = (function () {
             setTimeout(() => {
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
             }, 0);
-
             // Salvar no servidor
             try {
                 await this.saveChatToServer(message);
+                
+                // ✨ Também enviar via WebSocket para sincronização em tempo real
+                if (this.chatWs && this.chatWs.readyState === WebSocket.OPEN) {
+                    const wsMessage = {
+                        type: 'message',
+                        data: {
+                            ...localMsg,
+                            videoId: this.currentVideoId
+                        }
+                    };
+                    this.chatWs.send(JSON.stringify(wsMessage));
+                    console.log('[LiveModal] Mensagem enviada via WebSocket');
+                }
             } catch (error) {
                 console.error('[LiveModal] Erro ao salvar mensagem:', error);
             }
@@ -1072,9 +1090,73 @@ window.LiveModal = (function () {
         },
 
         /**
+         * Conecta ao WebSocket de chat em tempo real
+         */
+        connectChatWebSocket() {
+            if (this.wsConnecting || this.chatWs) return; // Já está conectado ou conectando
+            
+            this.wsConnecting = true;
+            
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/chat?videoId=${encodeURIComponent(this.currentVideoId)}`;
+                
+                console.log('[LiveModal] Conectando ao WebSocket:', wsUrl);
+                
+                this.chatWs = new WebSocket(wsUrl);
+                
+                this.chatWs.onopen = () => {
+                    console.log('[LiveModal WS] Conectado com sucesso');
+                    this.wsConnecting = false;
+                };
+                
+                this.chatWs.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        console.log('[LiveModal WS] Mensagem recebida:', message.type);
+                        
+                        if (message.type === 'message' && message.data) {
+                            // Adicionar mensagem recebida do servidor
+                            const incomingMsg = message.data;
+                            
+                            // Verificar se já existe (evitar duplicatas)
+                            const exists = this.messages.find(m => m.id === incomingMsg.id);
+                            if (!exists) {
+                                this.messages.push(incomingMsg);
+                                this.renderChat();
+                                setTimeout(() => {
+                                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                                }, 0);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[LiveModal WS] Erro ao processar mensagem:', e);
+                    }
+                };
+                
+                this.chatWs.onerror = (error) => {
+                    console.error('[LiveModal WS] Erro:', error);
+                    this.wsConnecting = false;
+                };
+                
+                this.chatWs.onclose = () => {
+                    console.log('[LiveModal WS] Desconectado');
+                    this.chatWs = null;
+                    this.wsConnecting = false;
+                };
+            } catch (e) {
+                console.error('[LiveModal WS] Erro ao criar WebSocket:', e);
+                this.wsConnecting = false;
+            }
+        },
+
+        /**
          * Inicia sincronização automática de chat
          */
         startSync() {
+            // ✨ Conectar ao WebSocket de chat
+            this.connectChatWebSocket();
+            
             if (this.syncInterval) clearInterval(this.syncInterval);
             
             this.syncInterval = setInterval(async () => {
@@ -1144,6 +1226,16 @@ window.LiveModal = (function () {
             if (this.syncInterval) {
                 clearInterval(this.syncInterval);
                 this.syncInterval = null;
+            }
+            
+            // ✨ Fechar WebSocket
+            if (this.chatWs) {
+                try {
+                    this.chatWs.close();
+                } catch (e) {
+                    console.warn('[LiveModal] Erro ao fechar WebSocket:', e);
+                }
+                this.chatWs = null;
             }
         },
 
