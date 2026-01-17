@@ -1102,8 +1102,15 @@ window.LiveModal = (function () {
                     const serverMessages = await response.json();
                     if (!Array.isArray(serverMessages)) return;
 
-                    // Sincronizar se houver diferença NO NÚMERO de mensagens (maior OU menor)
-                    if (serverMessages.length !== this.messages.length) {
+                    // SEMPRE sincronizar (comparar por IDs para evitar duplicatas)
+                    const serverIds = serverMessages.map(m => m.id);
+                    const localIds = this.messages.map(m => m.id);
+                    
+                    // Se há mensagens novas no servidor ou foi removida alguma
+                    const hasNewMessages = serverIds.some(id => !localIds.includes(id));
+                    const hasRemovedMessages = localIds.some(id => !serverIds.includes(id));
+                    
+                    if (serverMessages.length !== this.messages.length || hasNewMessages || hasRemovedMessages) {
                         this.messages = serverMessages.map(msg => ({
                             ...msg,
                             timestamp: msg.timestamp || new Date(msg.createdAt).toLocaleTimeString('pt-BR', { 
