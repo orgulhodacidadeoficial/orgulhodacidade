@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="youtube-player.css">
     <link rel="stylesheet" href="auth-modal.css">
+    <link rel="stylesheet" href="livemodal.css">
 </head>
 <body>
 
@@ -181,7 +182,7 @@
         </section>
 
         <!-- Seção de Apresentações -->
-      <!--  <section class="apresentacoes" id="apresentacoes-section">
+        <section class="apresentacoes" id="apresentacoes-section">
             <h2>Próximas Apresentações</h2>
             
             <form id="form-apresentacao" class="admin-form">
@@ -236,7 +237,7 @@
             <div class="lista-apresentacoes" id="lista-apresentacoes">
                 
             </div>
-        </section>-->
+        </section>
     </main>
 
    <footer class="main-footer">
@@ -281,71 +282,11 @@
   <p>Todos os direitos reservados • São Luís-MA</p>
 </div>
     </footer>
-
-    <!-- Modal de Autenticação -->
-    <div id="authModal" class="auth-modal-overlay">
-        <div class="auth-modal">
-            <div class="auth-header">
-                        <div class="auth-tabs">
-                            <button class="auth-tab active" data-tab="login">Login</button>
-                            <button class="auth-tab" data-tab="register">Criar Conta</button>
-                        </div>
-                        <button id="authModalClose" class="auth-close" aria-label="Fechar">×</button>
-                    </div>
-            <div class="auth-content">
-            <!-- Formulário de Login -->
-            <form id="loginForm" class="auth-form">
-                <div class="form-group">
-                    <label for="loginEmail">Email</label>
-                    <input type="email" id="loginEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">Senha</label>
-                    <input type="password" id="loginPassword" required>
-                </div>
-                <button type="submit" class="auth-button">Entrar</button>
-                <div class="auth-divider">ou</div>
-                <!-- Guest/visitor option removed: only authenticated users may access the chat -->
-                <p class="auth-info">
-                    Ainda não tem uma conta? <a href="#" data-tab="register">Criar conta</a>
-                </p>
-                <div class="auth-message"></div>
-            </form>
-
-            <!-- Formulário de Registro -->
-            <form id="registerForm" class="auth-form" style="display: none;">
-                <div class="form-group">
-                    <label for="registerName">Nome</label>
-                    <input type="text" id="registerName" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerEmail">Email</label>
-                    <input type="email" id="registerEmail" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerPassword">Senha</label>
-                    <input type="password" id="registerPassword" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerConfirmPassword">Confirmar Senha</label>
-                    <input type="password" id="registerConfirmPassword" required>
-                </div>
-                <button type="submit" class="auth-button">Criar Conta</button>
-                <p class="auth-info">
-                    Já tem uma conta? <a href="#" data-tab="login">Fazer login</a>
-                </p>
-                <div class="auth-message"></div>
-            </form>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Audio Player Element removed from index (audio playback moved to /musicas.html) -->
-
-    <!-- ================= SCRIPTS ================= -->
+     <!-- ================= SCRIPTS ================= -->
     <script src="auth.js"></script>
     <script src="loader.js"></script>
     <script src="youtube-player.js"></script>
+    <script src="livemodal.js"></script>
     <script src="carousel-titulo.js"></script>
     <script src="carousel.js"></script>
     <script src="brincantes-carousel-new.js"></script>

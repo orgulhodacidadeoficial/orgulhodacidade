@@ -898,13 +898,7 @@
       botaoElement.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        const card = botaoElement.closest('.apresentacao-card');
-        const eventName = card ? (card.querySelector('.apresentacao-titulo')?.textContent || 'Transmissão ao vivo') : 'Transmissão ao vivo';
-        if (window.LiveModal && typeof window.LiveModal.showLiveModal === 'function') {
-          window.LiveModal.showLiveModal(youtubeUrl, eventName);
-        } else {
-          window.open(youtubeUrl, '_blank');
-        }
+        window.open(youtubeUrl, '_blank');
       });
     } catch (error) {
       console.error('Erro ao verificar status do YouTube:', error);
@@ -1102,10 +1096,10 @@
       const senha = prompt('Digite o código secreto para virar admin:');
       const codigoCorreto = 'boi2025';
       if(senha === codigoCorreto){
-        const user = JSON.parse(localStorage.getItem('chatUser') || '{"name":"Visitante"}');
+        const user = JSON.parse(localStorage.getItem('user') || '{"name":"Visitante"}');
         user.isAdmin = true;
         user.isPresident = true;
-        localStorage.setItem('chatUser', JSON.stringify(user));
+        localStorage.setItem('user', JSON.stringify(user));
         console.log('✅ Você é admin agora!');
         showTemporaryMessage('✅ Código correto! Você é admin.');
         // Ativa o modo admin para apresentações

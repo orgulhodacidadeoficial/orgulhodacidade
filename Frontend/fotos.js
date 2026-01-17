@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function(){
   function checkIfOwner(){
     try {
       // Verifica localStorage (onde auth.js armazena dados do usuário)
-      const userStr = localStorage.getItem('chatUser');
+      const userStr = localStorage.getItem('user');
       if(userStr){
         const user = JSON.parse(userStr);
         isOwner = !!(user.isAdmin || user.isPresident);

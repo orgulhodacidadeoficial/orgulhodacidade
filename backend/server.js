@@ -155,6 +155,17 @@ async function initializeTables() {
       )
     `);
     
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        videoId TEXT NOT NULL,
+        user TEXT NOT NULL,
+        text TEXT NOT NULL,
+        timestamp TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
     console.log('Tabelas SQLite inicializadas com sucesso');
   } catch (err) {
     console.error('Erro inicializando tabelas:', err);
@@ -227,6 +238,17 @@ async function initializePgTables() {
       CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
         data JSONB,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await pgQuery(`
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id SERIAL PRIMARY KEY,
+        videoId TEXT NOT NULL,
+        user TEXT NOT NULL,
+        text TEXT NOT NULL,
+        timestamp TEXT,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -832,9 +854,39 @@ app.get('/api/auth/me', async (req, res) => {
 
 app.post('/api/inscricao', async (req, res) => {
   try {
+    // Extrair e normalizar IP
+    let clientIp = req.ip || req.connection.remoteAddress || 'unknown';
+    // Remover "::ffff:" do IPv4 encapsulado em IPv6
+    clientIp = clientIp.replace(/^::ffff:/, '');
+    
+    console.log('Nova inscrição - IP detectado:', clientIp);
+    
+    // Verificar se este IP já se inscreveu
+    const inscricoes = await readJson('inscricoes');
+    console.log('Total de inscrições no banco:', inscricoes.length);
+    
+    if (inscricoes && inscricoes.length > 0) {
+      console.log('IPs registrados:', inscricoes.map(insc => insc.ip));
+      
+      const jaInscrito = inscricoes.some(insc => {
+        const ipNormalizado = (insc.ip || '').replace(/^::ffff:/, '');
+        const ipIguais = ipNormalizado === clientIp;
+        console.log(`Comparando: "${ipNormalizado}" === "${clientIp}" -> ${ipIguais}`);
+        return ipIguais;
+      });
+      
+      console.log('Resultado jaInscrito:', jaInscrito);
+      
+      if (jaInscrito) {
+        return res.status(400).json({ 
+          error: 'Você já realizou uma inscrição neste dispositivo. Apenas uma inscrição por dispositivo é permitida.' 
+        });
+      }
+    }
+    
     const entry = Object.assign({}, req.body, {
       receivedAt: Date.now(),
-      ip: req.ip,
+      ip: clientIp,
     });
     await appendToJson('inscricoes', entry);
     res.json({ ok: true });
@@ -945,6 +997,17 @@ app.get('/api/admin/contratacoes', requireAdmin, async (req, res) => {
   }
 });
 
+// Clear all inscrições
+app.post('/api/admin/inscricoes/clear', requireAdmin, async (req, res) => {
+  try {
+    await writeJson('inscricoes', []);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('clear inscricoes error', err);
+    return res.status(500).json({ error: 'failed' });
+  }
+});
+
 // Delete a specific inscrição by index (body: { index })
 app.post('/api/admin/inscricoes/delete', requireAdmin, async (req, res) => {
   try {
@@ -971,18 +1034,106 @@ app.post('/api/admin/contatos/clear', requireAdmin, async (req, res) => {
   }
 });
 
+// Delete a specific contato by index
+app.post('/api/admin/contatos/delete', requireAdmin, async (req, res) => {
+  try {
+    const idx = Number(req.body && req.body.index);
+    const arr = await readJson('contatos');
+    
+    console.log(`[DELETE CONTATO] Tentando deletar índice ${idx} do array com ${arr.length} itens`);
+    
+    if (!Number.isInteger(idx) || idx < 0 || idx >= arr.length) {
+      console.error(`[DELETE CONTATO] Índice inválido: ${idx}, tamanho: ${arr.length}`);
+      return res.status(400).json({ error: `Índice inválido: ${idx}` });
+    }
+    
+    arr.splice(idx, 1);
+    await writeJson('contatos', arr);
+    console.log(`[DELETE CONTATO] ✅ Contato deletado com sucesso`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('delete contatos error', err);
+    return res.status(500).json({ error: err.message || 'failed' });
+  }
+});
+
+// Delete endpoint for DELETE method (contatos)
+app.delete('/api/admin/contatos/delete', requireAdmin, async (req, res) => {
+  try {
+    const idx = Number(req.body && req.body.index);
+    const arr = await readJson('contatos');
+    
+    console.log(`[DELETE CONTATO] Tentando deletar índice ${idx} do array com ${arr.length} itens`);
+    
+    if (!Number.isInteger(idx) || idx < 0 || idx >= arr.length) {
+      console.error(`[DELETE CONTATO] Índice inválido: ${idx}, tamanho: ${arr.length}`);
+      return res.status(400).json({ error: `Índice inválido: ${idx}` });
+    }
+    
+    arr.splice(idx, 1);
+    await writeJson('contatos', arr);
+    console.log(`[DELETE CONTATO] ✅ Contato deletado com sucesso`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('delete contatos error', err);
+    return res.status(500).json({ error: err.message || 'failed' });
+  }
+});
+
+// Clear all contratações
+app.post('/api/admin/contratacoes/clear', requireAdmin, async (req, res) => {
+  try {
+    await writeJson('contratacoes', []);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('clear contratacoes error', err);
+    return res.status(500).json({ error: 'failed' });
+  }
+});
+
 // Delete a specific contratacao by index
 app.post('/api/admin/contratacoes/delete', requireAdmin, async (req, res) => {
   try {
     const idx = Number(req.body && req.body.index);
     const arr = await readJson('contratacoes');
-    if (!Number.isInteger(idx) || idx < 0 || idx >= arr.length) return res.status(400).json({ error: 'Índice inválido' });
+    
+    console.log(`[DELETE CONTRATACAO] Tentando deletar índice ${idx} do array com ${arr.length} itens`);
+    
+    if (!Number.isInteger(idx) || idx < 0 || idx >= arr.length) {
+      console.error(`[DELETE CONTRATACAO] Índice inválido: ${idx}, tamanho: ${arr.length}`);
+      return res.status(400).json({ error: `Índice inválido: ${idx}` });
+    }
+    
     arr.splice(idx, 1);
     await writeJson('contratacoes', arr);
+    console.log(`[DELETE CONTRATACAO] ✅ Contratação deletada com sucesso`);
     return res.json({ ok: true });
   } catch (err) {
     console.error('delete contratacoes error', err);
-    return res.status(500).json({ error: 'failed' });
+    return res.status(500).json({ error: err.message || 'failed' });
+  }
+});
+
+// Delete endpoint for DELETE method (contratacoes)
+app.delete('/api/admin/contratacoes/delete', requireAdmin, async (req, res) => {
+  try {
+    const idx = Number(req.body && req.body.index);
+    const arr = await readJson('contratacoes');
+    
+    console.log(`[DELETE CONTRATACAO] Tentando deletar índice ${idx} do array com ${arr.length} itens`);
+    
+    if (!Number.isInteger(idx) || idx < 0 || idx >= arr.length) {
+      console.error(`[DELETE CONTRATACAO] Índice inválido: ${idx}, tamanho: ${arr.length}`);
+      return res.status(400).json({ error: `Índice inválido: ${idx}` });
+    }
+    
+    arr.splice(idx, 1);
+    await writeJson('contratacoes', arr);
+    console.log(`[DELETE CONTRATACAO] ✅ Contratação deletada com sucesso`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('delete contratacoes error', err);
+    return res.status(500).json({ error: err.message || 'failed' });
   }
 });
 
@@ -1027,6 +1178,108 @@ app.get('/api/eventos', async (req, res) => {
   } catch (err) {
     console.error('Erro carregando events.json (alias /api/eventos):', err);
     return res.status(500).json({ error: 'failed' });
+  }
+});
+
+// ===== CHAT ENDPOINTS =====
+
+// POST /api/chat - Salva uma mensagem de chat
+app.post('/api/chat', express.json(), async (req, res) => {
+  try {
+    const { videoId, user, text, timestamp } = req.body;
+    
+    // Validações básicas
+    if (!videoId || !user || !text) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Limpar texto contra XSS
+    const cleanText = text.substring(0, 200); // Limite 200 caracteres
+    const cleanUser = user.substring(0, 100);
+    
+    if (USE_POSTGRES) {
+      // PostgreSQL
+      const result = await pgQuery(
+        `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
+        [videoId, cleanUser, cleanText, timestamp]
+      );
+      return res.json({ success: true, id: result.rows[0].id });
+    } else {
+      // SQLite
+      const result = await dbRun(
+        `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES (?, ?, ?, ?)`,
+        [videoId, cleanUser, cleanText, timestamp]
+      );
+      return res.json({ success: true, id: result.lastID });
+    }
+  } catch (err) {
+    console.error('Erro ao salvar mensagem de chat:', err);
+    return res.status(500).json({ error: 'Failed to save message' });
+  }
+});
+
+// GET /api/chat - Carrega mensagens de chat para um vídeo
+app.get('/api/chat', async (req, res) => {
+  try {
+    const { videoId, limit = 100 } = req.query;
+    
+    if (!videoId) {
+      return res.status(400).json({ error: 'videoId is required' });
+    }
+    
+    const limitNum = Math.min(parseInt(limit) || 100, 500); // Máximo 500 mensagens
+    
+    if (USE_POSTGRES) {
+      // PostgreSQL
+      const result = await pgQuery(
+        `SELECT id, videoId, user, text, timestamp, createdAt 
+         FROM chat_messages 
+         WHERE videoId = $1 
+         ORDER BY createdAt DESC 
+         LIMIT $2`,
+        [videoId, limitNum]
+      );
+      return res.json(result.rows.reverse()); // Reverter para ordem cronológica
+    } else {
+      // SQLite
+      const messages = await dbAll(
+        `SELECT id, videoId, user, text, timestamp, createdAt 
+         FROM chat_messages 
+         WHERE videoId = ? 
+         ORDER BY createdAt DESC 
+         LIMIT ?`,
+        [videoId, limitNum]
+      );
+      return res.json(messages.reverse()); // Reverter para ordem cronológica
+    }
+  } catch (err) {
+    console.error('Erro ao carregar mensagens de chat:', err);
+    return res.status(500).json({ error: 'Failed to load messages' });
+  }
+});
+
+// DELETE /api/chat/:id - Remove uma mensagem (admin only)
+app.delete('/api/chat/:id', async (req, res) => {
+  try {
+    // Verificar se é admin
+    if (!req.session || !req.session.isAdmin) {
+      return res.status(403).json({ error: 'Admin only' });
+    }
+    
+    const { id } = req.params;
+    
+    if (USE_POSTGRES) {
+      // PostgreSQL
+      await pgQuery(`DELETE FROM chat_messages WHERE id = $1`, [id]);
+    } else {
+      // SQLite
+      await dbRun(`DELETE FROM chat_messages WHERE id = ?`, [id]);
+    }
+    
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Erro ao deletar mensagem de chat:', err);
+    return res.status(500).json({ error: 'Failed to delete message' });
   }
 });
 

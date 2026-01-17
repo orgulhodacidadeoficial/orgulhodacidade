@@ -852,11 +852,12 @@
       botaoElement.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        const card = botaoElement.closest('.apresentacao-card');
-        const eventName = card ? (card.querySelector('.apresentacao-titulo')?.textContent || 'Transmissão ao vivo') : 'Transmissão ao vivo';
-        if (window.LiveModal && typeof window.LiveModal.showLiveModal === 'function') {
-          window.LiveModal.showLiveModal(youtubeUrl, eventName);
+        // Abrir o livemodal em vez de window.open
+        if (window.LiveModal && typeof window.LiveModal.open === 'function') {
+          const eventoTitle = evento ? evento.nome : 'Transmissão ao vivo';
+          window.LiveModal.open(youtubeUrl, eventoTitle);
         } else {
+          console.warn('LiveModal não está disponível, abrindo em nova aba');
           window.open(youtubeUrl, '_blank');
         }
       });

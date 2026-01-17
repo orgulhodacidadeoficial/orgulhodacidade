@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function(){
   function checkIfOwner(){
     try {
       // Verifica localStorage (onde auth.js armazena dados do usuário)
-      const userStr = localStorage.getItem('chatUser');
+      const userStr = localStorage.getItem('user');
       if(userStr){
         const user = JSON.parse(userStr);
         isOwner = !!(user.isAdmin || user.isPresident);
@@ -39,10 +39,10 @@ document.addEventListener('DOMContentLoaded', function(){
     const codigoCorreto = 'boi2025';
     
     if(senha === codigoCorreto){
-      const user = JSON.parse(localStorage.getItem('chatUser') || '{"name":"Visitante"}');
+      const user = JSON.parse(localStorage.getItem('user') || '{"name":"Visitante"}');
       user.isAdmin = true;
       user.isPresident = true;
-      localStorage.setItem('chatUser', JSON.stringify(user));
+      localStorage.setItem('user', JSON.stringify(user));
       console.log('✅ Você é admin agora! Atualize a página (F5)');
       showToast('✅ Código correto! Você é admin. Recarregue a página (F5)');
       isOwner = true;

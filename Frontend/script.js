@@ -86,6 +86,7 @@ window.handleInscricao = async function handleInscricao(e) {
         tipo_participacao: (form.tipo_participacao && form.tipo_participacao.value) || '',
         telefone: (form.telefone && form.telefone.value || '').trim(),
         bairro: (form.bairro && form.bairro.value || '').trim(),
+        Rede_sociais: (form.Rede_sociais && form.Rede_sociais.value || '').trim(),
         email: (form.email && form.email.value || '').trim()
     };
 
@@ -175,7 +176,7 @@ window.handleInscricao = async function handleInscricao(e) {
             showModal(errText, 'error');
             return false;
         }
-
+        
         showModal('Sua inscrição foi enviada com sucesso! Em breve entraremos em contato.', 'success', () => {
             try { form.reset(); } catch (err) {}
         });

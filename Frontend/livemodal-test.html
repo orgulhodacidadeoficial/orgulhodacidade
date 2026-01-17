@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveModal - Teste</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="livemodal.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-section h2 {
+            color: #333;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .test-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .test-btn-primary {
+            background: linear-gradient(135deg, #0b5cff 0%, #0b3a91 100%);
+            color: white;
+        }
+        
+        .test-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(11, 92, 255, 0.4);
+        }
+        
+        .test-btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .test-btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .url-input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+        
+        .info-box {
+            background: #f0f7ff;
+            border-left: 4px solid #0b5cff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 13px;
+            color: #0b3a91;
+        }
+        
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 40px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 LiveModal - Testador</h1>
+        <p class="subtitle">Teste a funcionalidade de transmissão ao vivo com chat</p>
+        
+        <!-- Teste Rápido -->
+        <div class="test-section">
+            <h2><i class="fas fa-rocket"></i> Teste Rápido</h2>
+            
+            <div class="test-buttons">
+                <button class="test-btn test-btn-primary" onclick="testDefaultVideo()">
+                    <i class="fas fa-play"></i> Teste com Vídeo Padrão
+                </button>
+                <button class="test-btn test-btn-primary" onclick="testWithCustomUrl()">
+                    <i class="fas fa-link"></i> Teste com URL Personalizada
+                </button>
+            </div>
+            
+            <div class="info-box">
+                <strong>💡 Dica:</strong> O modal abrirá com um vídeo do YouTube incorporado e um chat ao lado.
+            </div>
+        </div>
+        
+        <!-- URL Personalizada -->
+        <div class="test-section">
+            <h2><i class="fas fa-link"></i> Usar URL Personalizada</h2>
+            
+            <label for="custom-url">Cole aqui a URL do YouTube:</label>
+            <input 
+                type="text" 
+                id="custom-url" 
+                class="url-input"
+                placeholder="https://youtu.be/VIDEO_ID ou https://www.youtube.com/watch?v=VIDEO_ID"
+                value="https://youtu.be/dQw4w9WgXcQ"
+            >
+            
+            <div class="test-buttons">
+                <button class="test-btn test-btn-primary" onclick="openCustomUrl()">
+                    <i class="fas fa-play"></i> Abrir Modal
+                </button>
+                <button class="test-btn test-btn-secondary" onclick="clearInput()">
+                    <i class="fas fa-trash"></i> Limpar
+                </button>
+            </div>
+            
+            <div class="code-block">
+<strong>Formatos Aceitos:</strong>
+• https://youtu.be/VIDEO_ID
+• https://www.youtube.com/watch?v=VIDEO_ID
+• https://www.youtube.com/embed/VIDEO_ID
+            </div>
+        </div>
+        
+        <!-- Personalizar Chat -->
+        <div class="test-section">
+            <h2><i class="fas fa-user"></i> Personalizar Nickname</h2>
+            
+            <label for="user-name">Seu nome no chat:</label>
+            <input 
+                type="text" 
+                id="user-name" 
+                class="url-input"
+                placeholder="Digite seu nome aqui"
+                onchange="setUserName(this.value)"
+            >
+            
+            <div class="info-box">
+                <strong>ℹ️ Informação:</strong> O nome será salvo e usado em todas as mensagens de chat.
+            </div>
+        </div>
+        
+        <!-- Documentação -->
+        <div class="test-section">
+            <h2><i class="fas fa-book"></i> Documentação</h2>
+            
+            <h3>Como o Modal Funciona</h3>
+            <ol>
+                <li><strong>Vídeo YouTube:</strong> Incorporado do lado esquerdo (desktop) ou superior (mobile)</li>
+                <li><strong>Chat:</strong> Incorporado do lado direito (desktop) ou inferior (mobile)</li>
+                <li><strong>Responsivo:</strong> Layout se adapta automaticamente para diferentes tamanhos de tela</li>
+                <li><strong>Armazenamento:</strong> Mensagens são salvas localmente (sem servidor necessário)</li>
+            </ol>
+            
+            <h3>Códigos JavaScript</h3>
+            
+            <div class="code-block">
+// Abrir modal com vídeo
+window.LiveModal.open('https://youtu.be/VIDEO_ID', 'Título da Transmissão');
+
+// Definir nome do usuário
+window.LiveModal.setUserName('Seu Nome');
+
+// Fechar modal
+window.LiveModal.close();
+
+// Enviar mensagem (programaticamente)
+window.LiveModal.chatInput.value = 'Sua mensagem';
+window.LiveModal.sendMessage();
+            </div>
+            
+            <h3>Variáveis Disponíveis</h3>
+            <div class="code-block">
+window.LiveModal.messages       // Array de mensagens
+window.LiveModal.userName       // Nome atual do usuário
+window.LiveModal.currentVideoId // ID do vídeo atual
+window.LiveModal.overlay        // Elemento overlay do modal
+            </div>
+        </div>
+        
+        <!-- Status -->
+        <div class="test-section">
+            <h2><i class="fas fa-info-circle"></i> Status do Sistema</h2>
+            <div id="status" class="info-box"></div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>🎬 LiveModal v1.0.0 | Criado em 17 de Janeiro de 2026</p>
+        <p>Para suporte, consulte a documentação em LIVEMODAL.md</p>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="youtube-player.js"></script>
+    <script src="livemodal.js"></script>
+    
+    <script>
+        // Função para testar com vídeo padrão
+        function testDefaultVideo() {
+            console.log('🎬 Abrindo modal com vídeo padrão');
+            window.LiveModal.open('https://youtu.be/dQw4w9WgXcQ', 'Teste de Transmissão');
+        }
+        
+        // Função para testar com URL personalizada
+        function testWithCustomUrl() {
+            const url = document.getElementById('custom-url').value.trim();
+            if (!url) {
+                alert('Por favor, insira uma URL válida');
+                return;
+            }
+            
+            console.log('🎬 Abrindo modal com URL personalizada:', url);
+            window.LiveModal.open(url, 'Transmissão Personalizada');
+        }
+        
+        // Abrir com URL do input
+        function openCustomUrl() {
+            testWithCustomUrl();
+        }
+        
+        // Limpar input
+        function clearInput() {
+            document.getElementById('custom-url').value = '';
+            document.getElementById('custom-url').focus();
+        }
+        
+        // Definir nome do usuário
+        function setUserName(name) {
+            if (name) {
+                window.LiveModal.setUserName(name);
+                console.log('👤 Nome definido como:', name);
+            }
+        }
+        
+        // Status do sistema
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusDiv = document.getElementById('status');
+            
+            let html = '<strong>✅ Sistema Online</strong><br>';
+            html += '• LiveModal: ' + (window.LiveModal ? '✓' : '✗') + '<br>';
+            html += '• YouTubePlayer: ' + (window.YouTubePlayer ? '✓' : '✗') + '<br>';
+            html += '• Font Awesome: ✓<br>';
+            
+            // Carregar nome salvo
+            const savedName = localStorage.getItem('liveModalUserName');
+            if (savedName) {
+                document.getElementById('user-name').value = savedName;
+            }
+            
+            statusDiv.innerHTML = html;
+        });
+        
+        // Permitir Enter para abrir
+        document.getElementById('custom-url').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') openCustomUrl();
+        });
+    </script>
+</body>
+</html>

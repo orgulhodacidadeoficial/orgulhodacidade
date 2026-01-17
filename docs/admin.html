@@ -117,9 +117,10 @@
         // count types for chart
         const counts = {};
         sorted.forEach(item => {
-          const t = (item.tipo_participacao || 'Outros').toString();
+          const t = (item.tipo_participacao || 'Outros').toString().trim().toLowerCase();
           counts[t] = (counts[t] || 0) + 1;
         });
+        console.log('Contagem de tipos:', counts);
 
         // build html with canvas for chart and either a table (desktop)
         // or a compact list (tablet/mobile). We detect viewport width here.
@@ -130,7 +131,7 @@
             <h3>Inscrições por Tipo</h3>
             <button id="btnRelatorio" style="background:#0046ad">📋 Gerar Relatório</button>
           </div>
-          <div style="height:120px"><canvas id="insChart"></canvas></div><hr>`;
+          <div style="height:300px;margin-bottom:1.5rem"><canvas id="insChart"></canvas></div>`;
 
         // Build either a full table (desktop) or a compact list (mobile/tablet)
         if (!isCompact) {
@@ -306,15 +307,24 @@
           }
         }));
 
-        // load Chart.js from CDN if not present
-        (function renderChart(){
-          const labels = Object.keys(counts);
-          const data = labels.map(l => counts[l]);
+        // Renderizar gráfico DEPOIS que o DOM estiver pronto
+        setTimeout(() => {
+          const labels = Object.keys(counts).map(l => l.charAt(0).toUpperCase() + l.slice(1));
+          const data = Object.keys(counts).map(l => counts[l]);
+          console.log('Labels:', labels);
+          console.log('Data:', data);
+          console.log('Counts:', counts);
+          
           function onceLoaded(){
             try{
-              const ctx = document.getElementById('insChart').getContext('2d');
+              const ctx = document.getElementById('insChart');
+              if (!ctx) {
+                console.error('Canvas insChart não encontrado');
+                return;
+              }
+              const canvasCtx = ctx.getContext('2d');
               // eslint-disable-next-line no-undef
-              new Chart(ctx, {
+              new Chart(canvasCtx, {
                 type: 'bar',
                 data: {
                   labels,
@@ -347,7 +357,7 @@
           s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
           s.onload = onceLoaded; s.onerror = ()=>console.warn('Não foi possível carregar Chart.js');
           document.head.appendChild(s);
-        })();
+        }, 100);
 
         // Preview inscription data in a modal and offer download
         function showInscricaoPreview(obj) {
@@ -424,17 +434,43 @@
           </div>`;
           return;
         }
+        
+        // Análise dos contatos
+        const assuntos = {};
+        arr.forEach(c => {
+          const ass = c.assunto || c.subject || 'Sem assunto';
+          assuntos[ass] = (assuntos[ass] || 0) + 1;
+        });
+
+        let html = `<div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem">
+            <div>
+              <h3 style="margin:0 0 0.5rem 0">📧 Contatos</h3>
+              <p style="margin:0;color:#666;font-size:0.9rem">${arr.length} ${arr.length === 1 ? 'contato' : 'contatos'} registrado${arr.length === 1 ? '' : 's'}</p>
+            </div>
+            <button id="clearContBtn" style="background:#dc2626">
+              🗑️ Limpar todos
+            </button>
+          </div>
+          
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
+            <div style="background:#f0f8f5;padding:1rem;border-radius:8px;border-left:4px solid #00b37a">
+              <div style="font-size:0.85rem;color:#666;margin-bottom:0.5rem">💬 Assunto Mais Comum</div>
+              <div style="font-size:1.1rem;font-weight:bold;color:#00b37a">${Object.entries(assuntos).sort((a, b) => b[1] - a[1])[0]?.[0] || '-'}</div>
+              <div style="font-size:0.9rem;color:#999;margin-top:0.3rem">${Object.entries(assuntos).sort((a, b) => b[1] - a[1])[0]?.[1] || 0} mensagens</div>
+            </div>
+            <div style="background:#f0f8f5;padding:1rem;border-radius:8px;border-left:4px solid #0b3a91">
+              <div style="font-size:0.85rem;color:#666;margin-bottom:0.5rem">📌 Total de Temas</div>
+              <div style="font-size:1.1rem;font-weight:bold;color:#0b3a91">${Object.keys(assuntos).length}</div>
+              <div style="font-size:0.9rem;color:#999;margin-top:0.3rem">assuntos diferentes</div>
+            </div>
+          </div>
+          
+          <div class="table-responsive"><table><thead><tr>`;
+        
         const keys = new Set();
         arr.forEach(v => Object.keys(v).forEach(k => keys.add(k)));
         const head = Array.from(keys);
-        let html = `<div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-            <h3>Lista de Contatos (${arr.length} ${arr.length === 1 ? 'registro' : 'registros'})</h3>
-            <button id="clearContBtn" style="background:#dc2626">
-              🗑️ Limpar todos os contatos
-            </button>
-          </div>
-          <div class="table-responsive"><table><thead><tr>`;
         head.forEach(h=> html += `<th>${h}</th>`);
         html += `</tr></thead><tbody>`;
         arr.forEach(item => {
