@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: orgulho-da-cidade
+    runtime: node
+    buildCommand: npm install
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        value: "sqlite:///data/app.db"
+    routes:
+      - path: /
+        matchType: prefix
+        dest: /Frontend/index.html
