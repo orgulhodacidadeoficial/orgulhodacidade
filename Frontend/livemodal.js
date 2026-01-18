@@ -18,6 +18,7 @@ window.LiveModal = (function () {
         messages: [],
         userName: null,
         userEmail: null,
+        userAvatar: null, // Avatar do usuário em base64
         userRole: 'USUARIO', // USUARIO, ADM, PROPRIETARIO
         syncInterval: null,
         lastSyncTime: 0,
@@ -25,8 +26,7 @@ window.LiveModal = (function () {
         silencedUsers: {}, // { email: timestamp_fim }
         proprietarioName: null, // Será carregado do sessionStorage
         serverProprietario: null, // Proprietário definido no servidor (em tempo real)
-        chatWs: null, // WebSocket para chat em tempo real
-        wsConnecting: false, // Flag para evitar múltiplas conexões
+        userColors: {}, // Cache de cores dos usuários
 
         /**
          * Inicializa o modal
@@ -55,22 +55,30 @@ window.LiveModal = (function () {
             const header = document.createElement('div');
             header.className = 'live-modal-header';
             header.innerHTML = `
-                <div class="live-modal-header-left">
-                    <button class="live-modal-logout-btn" aria-label="Logout">
-                        <i class="fas fa-sign-out-alt"></i> Sair
-                    </button>
-                </div>
                 <h2 class="live-modal-title">Transmissão ao vivo</h2>
-                <div class="live-modal-header-right">
-                    <span class="live-modal-user-display"></span>
-                    <button class="live-modal-close-btn" aria-label="Fechar transmissão">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+                <span class="live-modal-user-display" style="flex: 1; margin-left: 20px; font-size: 14px; display: flex; align-items: center; gap: 8px;"></span>
+                <button class="live-modal-settings-btn" style="padding: 6px 12px; margin-right: 8px; background: #4a90e2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;" aria-label="Configurações">
+                    ⚙️
+                </button>
+                <button class="live-modal-logout-btn" style="padding: 6px 12px; margin-right: 8px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;" aria-label="Logout">
+                    Sair
+                </button>
+                <button class="live-modal-close-btn" aria-label="Fechar transmissão">
+                    <i class="fas fa-times"></i>
+                </button>
             `;
             this.closeBtn = header.querySelector('.live-modal-close-btn');
             const logoutBtn = header.querySelector('.live-modal-logout-btn');
+            const settingsBtn = header.querySelector('.live-modal-settings-btn');
+            
             logoutBtn.addEventListener('click', () => this.logout());
+            
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => this.showSettingsModal());
+                console.log('[LiveModal] Settings button carregado com sucesso');
+            } else {
+                console.error('[LiveModal] Settings button não encontrado!');
+            }
 
             // Content (vídeo + chat)
             const content = document.createElement('div');
@@ -171,6 +179,7 @@ window.LiveModal = (function () {
         loadUserData() {
             this.userName = sessionStorage.getItem('liveModalUserName') || null;
             this.userEmail = sessionStorage.getItem('liveModalUserEmail') || null;
+            this.userAvatar = sessionStorage.getItem('liveModalUserAvatar') || null;
             this.proprietarioName = sessionStorage.getItem('liveModalProprietarioName') || null; // Carregar proprietário
             this.authenticated = !!(this.userName && this.userEmail);
             
@@ -185,8 +194,7 @@ window.LiveModal = (function () {
          */
         async loadAdmListFromServer() {
             try {
-                const apiUrl = window.location.origin + '/api/chat/admins-list';
-                const response = await fetch(apiUrl);
+                const response = await fetch('/api/chat/admins-list');
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data.admins)) {
@@ -230,7 +238,7 @@ window.LiveModal = (function () {
                 
                 // Notificar servidor que você é o proprietário
                 try {
-                    const propUrl = window.location.origin + '/api/chat/proprietario';
+                    const propUrl = '/api/chat/proprietario';
                     console.log(`[DEBUG] Enviando proprietário para servidor: ${this.userName} em videoId: ${this.currentVideoId}`);
                     
                     const response = await fetch(propUrl, {
@@ -267,6 +275,50 @@ window.LiveModal = (function () {
         hasAdmRole(email) {
             const admList = JSON.parse(sessionStorage.getItem('liveModalAdmList') || '[]');
             return admList.includes(email);
+        },
+
+        /**
+         * Gera uma cor NEON única baseada no nome do usuário
+         */
+        getUserColor(userName) {
+            if (!userName) return '#00ff00';
+            
+            // Retornar cor em cache se existir
+            if (this.userColors[userName]) {
+                return this.userColors[userName];
+            }
+
+            // Cores NEON vibrantes
+            const neonColors = [
+                '#00ff00', // Verde NEON
+                '#00ffff', // Azul Ciano NEON
+                '#ff00ff', // Magenta NEON
+                '#ffff00', // Amarelo NEON
+                '#ff0080', // Rosa NEON
+                '#00ff80', // Verde-Azul NEON
+                '#ff8000', // Laranja NEON
+                '#8000ff', // Roxo NEON
+                '#ff0040', // Rosa Vermelho NEON
+                '#00ff40', // Verde Claro NEON
+                '#ff4000', // Vermelho Laranja NEON
+                '#0080ff'  // Azul NEON
+            ];
+
+            // Gerar hash do nome para selecionar cor consistente
+            let hash = 0;
+            for (let i = 0; i < userName.length; i++) {
+                const char = userName.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Converter para inteiro 32-bit
+            }
+
+            const colorIndex = Math.abs(hash) % neonColors.length;
+            const color = neonColors[colorIndex];
+            
+            // Cachear cor para este usuário
+            this.userColors[userName] = color;
+            
+            return color;
         },
 
         /**
@@ -357,18 +409,18 @@ window.LiveModal = (function () {
                         <i class="fas fa-comments"></i> Entrar no Chat
                     </h2>
                     <p style="text-align: center; opacity: 0.9; margin: 0 0 25px 0; font-size: 14px;">
-                        Defina seu nome para participar da transmissão ao vivo
+                        Faça login para participar da transmissão ao vivo
                     </p>
                     
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-user"></i> Seu Nome *
+                            <i class="fas fa-user"></i> Usuário *
                         </label>
                         <input 
                             type="text" 
-                            id="login-name" 
-                            placeholder="Digite seu nome"
-                            autocomplete="off"
+                            id="login-id" 
+                            placeholder="Seu usuário"
+                            autocomplete="username"
                             style="
                                 width: 100%;
                                 padding: 10px 12px;
@@ -381,18 +433,17 @@ window.LiveModal = (function () {
                                 font-family: inherit;
                             "
                         >
-                        <small style="opacity: 0.8; display: block; margin-top: 4px;">Mínimo 3 caracteres</small>
                     </div>
                     
                     <div style="margin-bottom: 20px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-envelope"></i> Email (Opcional)
+                            <i class="fas fa-lock"></i> Senha *
                         </label>
                         <input 
-                            type="email" 
-                            id="login-email" 
-                            placeholder="seu@email.com"
-                            autocomplete="email"
+                            type="password" 
+                            id="login-password" 
+                            placeholder="Sua senha"
+                            autocomplete="current-password"
                             style="
                                 width: 100%;
                                 padding: 10px 12px;
@@ -405,8 +456,18 @@ window.LiveModal = (function () {
                                 font-family: inherit;
                             "
                         >
-                        <small style="opacity: 0.8; display: block; margin-top: 4px;">Para recuperar sua conta depois</small>
                     </div>
+
+                    <div id="login-error" style="
+                        margin-bottom: 15px;
+                        padding: 10px;
+                        border-radius: 4px;
+                        background: rgba(255, 100, 100, 0.2);
+                        color: #ffcccc;
+                        font-size: 13px;
+                        display: none;
+                        text-align: center;
+                    "></div>
                     
                     <button id="login-submit" style="
                         width: 100%;
@@ -423,6 +484,23 @@ window.LiveModal = (function () {
                         font-family: inherit;
                     ">
                         <i class="fas fa-sign-in-alt"></i> Entrar
+                    </button>
+
+                    <button id="login-create-account" style="
+                        width: 100%;
+                        padding: 12px;
+                        background: rgba(100, 255, 100, 0.2);
+                        border: 1px solid rgba(100, 255, 100, 0.5);
+                        border-radius: 6px;
+                        color: #ccffcc;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        margin-bottom: 10px;
+                        font-size: 14px;
+                        font-family: inherit;
+                    ">
+                        <i class="fas fa-user-plus"></i> Criar Conta
                     </button>
                     
                     <button id="login-cancel" style="
@@ -449,10 +527,315 @@ window.LiveModal = (function () {
                 document.body.appendChild(loginOverlay);
                 loginOverlay.appendChild(loginBox);
 
-                const inputName = loginBox.querySelector('#login-name');
-                const inputEmail = loginBox.querySelector('#login-email');
+                const inputId = loginBox.querySelector('#login-id');
+                const inputPassword = loginBox.querySelector('#login-password');
                 const btnSubmit = loginBox.querySelector('#login-submit');
+                const btnCreateAccount = loginBox.querySelector('#login-create-account');
                 const btnCancel = loginBox.querySelector('#login-cancel');
+                const errorDiv = loginBox.querySelector('#login-error');
+
+                // Hover effects
+                btnSubmit.addEventListener('mouseover', () => {
+                    btnSubmit.style.background = 'rgba(255, 255, 255, 0.35)';
+                });
+                btnSubmit.addEventListener('mouseout', () => {
+                    btnSubmit.style.background = 'rgba(255, 255, 255, 0.25)';
+                });
+
+                btnCreateAccount.addEventListener('mouseover', () => {
+                    btnCreateAccount.style.background = 'rgba(100, 255, 100, 0.3)';
+                });
+                btnCreateAccount.addEventListener('mouseout', () => {
+                    btnCreateAccount.style.background = 'rgba(100, 255, 100, 0.2)';
+                });
+
+                btnCancel.addEventListener('mouseover', () => {
+                    btnCancel.style.background = 'rgba(255, 255, 255, 0.15)';
+                });
+                btnCancel.addEventListener('mouseout', () => {
+                    btnCancel.style.background = 'rgba(255, 255, 255, 0.1)';
+                });
+
+                // Focus no input
+                setTimeout(() => inputId.focus(), 100);
+
+                // Mostrar erro
+                const showError = (msg) => {
+                    errorDiv.textContent = msg;
+                    errorDiv.style.display = 'block';
+                    setTimeout(() => {
+                        errorDiv.style.display = 'none';
+                    }, 5000);
+                };
+
+                // Submeter login
+                const handleSubmit = async () => {
+                    const username = inputId.value.trim();
+                    const password = inputPassword.value.trim();
+
+                    if (!username) {
+                        showError('Por favor, digite seu usuário');
+                        inputId.focus();
+                        return;
+                    }
+
+                    if (!/^[a-zA-Z0-9]+$/.test(username)) {
+                        showError('Nome deve conter apenas letras e números');
+                        inputId.focus();
+                        return;
+                    }
+
+                    if (!password) {
+                        showError('Por favor, digite sua senha');
+                        inputPassword.focus();
+                        return;
+                    }
+
+                    if (username.length < 3) {
+                        showError('Usuário deve ter no mínimo 3 caracteres');
+                        inputId.focus();
+                        return;
+                    }
+
+                    // Desabilitar botão durante requisição
+                    btnSubmit.disabled = true;
+                    btnSubmit.style.opacity = '0.6';
+                    btnSubmit.textContent = '⏳ Autenticando...';
+
+                    try {
+                        // Validar senha no servidor
+                        const response = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: username, password: password })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.ok && data.userName) {
+                            // Login bem-sucedido
+                            this.userName = data.userName;
+                            this.userEmail = data.email || `${username}@chat.local`;
+                            this.authenticated = true;
+
+                            // Salvar dados localmente
+                            sessionStorage.setItem('liveModalUserName', this.userName);
+                            sessionStorage.setItem('liveModalUserEmail', this.userEmail);
+                            sessionStorage.setItem('liveModalUserId', data.id);
+
+                            console.log('[LiveModal] Usuário autenticado:', this.userName);
+
+                            // Remover modal
+                            loginOverlay.remove();
+                            resolve(true);
+                        } else {
+                            // Falha na autenticação
+                            showError(data.error || 'Falha na autenticação');
+                            btnSubmit.disabled = false;
+                            btnSubmit.style.opacity = '1';
+                            btnSubmit.textContent = '✓ Entrar';
+                            inputPassword.value = '';
+                            inputPassword.focus();
+                        }
+                    } catch (error) {
+                        console.error('[LiveModal] Erro ao fazer login:', error);
+                        showError('Erro ao conectar ao servidor. Tente novamente.');
+                        btnSubmit.disabled = false;
+                        btnSubmit.style.opacity = '1';
+                        btnSubmit.textContent = '✓ Entrar';
+                    }
+                };
+
+                btnSubmit.addEventListener('click', handleSubmit);
+                inputPassword.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') handleSubmit();
+                });
+
+                // Criar conta
+                btnCreateAccount.addEventListener('click', () => {
+                    loginOverlay.remove();
+                    this.showCreateAccountModal().then((created) => {
+                        if (created) {
+                            resolve(true);
+                        } else {
+                            // Se cancelou criar conta, reabre login
+                            this.showLoginModal().then(resolve);
+                        }
+                    });
+                });
+
+                // Cancelar
+                btnCancel.addEventListener('click', () => {
+                    loginOverlay.remove();
+                    resolve(false);
+                });
+            });
+        },
+
+        /**
+         * Mostra modal para criar conta
+         */
+        showCreateAccountModal() {
+            return new Promise((resolve) => {
+                const createOverlay = document.createElement('div');
+                createOverlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.95);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                `;
+
+                const createBox = document.createElement('div');
+                createBox.style.cssText = `
+                    background: linear-gradient(135deg, #0b5cff 0%, #0b3a91 100%);
+                    padding: 40px;
+                    border-radius: 12px;
+                    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+                    width: 90%;
+                    max-width: 400px;
+                    color: white;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                `;
+
+                createBox.innerHTML = `
+                    <h2 style="margin: 0 0 10px 0; text-align: center; font-size: 24px;">
+                        <i class="fas fa-user-plus"></i> Criar Conta
+                    </h2>
+                    <p style="text-align: center; opacity: 0.9; margin: 0 0 25px 0; font-size: 14px;">
+                        Registre-se para participar do chat
+                    </p>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-user"></i> Usuário *
+                        </label>
+                        <input 
+                            type="text" 
+                            id="create-id" 
+                            placeholder="Seu usuário"
+                            autocomplete="username"
+                            style="
+                                width: 100%;
+                                padding: 10px 12px;
+                                border: 1px solid rgba(255, 255, 255, 0.3);
+                                border-radius: 6px;
+                                background: rgba(255, 255, 255, 0.1);
+                                color: white;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                                font-family: inherit;
+                            "
+                        >
+                        <small style="opacity: 0.8; display: block; margin-top: 4px;">Mínimo 3 caracteres</small>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-lock"></i> Senha *
+                        </label>
+                        <input 
+                            type="password" 
+                            id="create-password" 
+                            placeholder="Crie uma senha"
+                            autocomplete="new-password"
+                            style="
+                                width: 100%;
+                                padding: 10px 12px;
+                                border: 1px solid rgba(255, 255, 255, 0.3);
+                                border-radius: 6px;
+                                background: rgba(255, 255, 255, 0.1);
+                                color: white;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                                font-family: inherit;
+                            "
+                        >
+                        <small style="opacity: 0.8; display: block; margin-top: 4px;">Mínimo 4 caracteres</small>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-lock-open"></i> Confirmar Senha *
+                        </label>
+                        <input 
+                            type="password" 
+                            id="create-confirm-password" 
+                            placeholder="Confirme a senha"
+                            autocomplete="new-password"
+                            style="
+                                width: 100%;
+                                padding: 10px 12px;
+                                border: 1px solid rgba(255, 255, 255, 0.3);
+                                border-radius: 6px;
+                                background: rgba(255, 255, 255, 0.1);
+                                color: white;
+                                font-size: 14px;
+                                box-sizing: border-box;
+                                font-family: inherit;
+                            "
+                        >
+                    </div>
+
+                    <div id="create-error" style="
+                        margin-bottom: 15px;
+                        padding: 10px;
+                        border-radius: 4px;
+                        background: rgba(255, 100, 100, 0.2);
+                        color: #ffcccc;
+                        font-size: 13px;
+                        display: none;
+                        text-align: center;
+                    "></div>
+                    
+                    <button id="create-submit" style="
+                        width: 100%;
+                        padding: 12px;
+                        background: rgba(255, 255, 255, 0.25);
+                        border: 1px solid rgba(255, 255, 255, 0.5);
+                        border-radius: 6px;
+                        color: white;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        margin-bottom: 10px;
+                        font-size: 14px;
+                        font-family: inherit;
+                    ">
+                        <i class="fas fa-check"></i> Criar Conta
+                    </button>
+                    
+                    <button id="create-cancel" style="
+                        width: 100%;
+                        padding: 12px;
+                        background: rgba(255, 255, 255, 0.1);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 6px;
+                        color: white;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        font-size: 14px;
+                        font-family: inherit;
+                    ">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </button>
+                `;
+
+                document.body.appendChild(createOverlay);
+                createOverlay.appendChild(createBox);
+
+                const inputId = createBox.querySelector('#create-id');
+                const inputPassword = createBox.querySelector('#create-password');
+                const inputConfirmPassword = createBox.querySelector('#create-confirm-password');
+                const btnSubmit = createBox.querySelector('#create-submit');
+                const btnCancel = createBox.querySelector('#create-cancel');
+                const errorDiv = createBox.querySelector('#create-error');
 
                 // Hover effects
                 btnSubmit.addEventListener('mouseover', () => {
@@ -469,67 +852,315 @@ window.LiveModal = (function () {
                     btnCancel.style.background = 'rgba(255, 255, 255, 0.1)';
                 });
 
-                // Focus no input
-                setTimeout(() => inputName.focus(), 100);
+                setTimeout(() => inputId.focus(), 100);
 
-                // Submeter
-                const handleSubmit = () => {
-                    const name = inputName.value.trim();
-                    const email = inputEmail.value.trim();
+                const showError = (msg) => {
+                    errorDiv.textContent = msg;
+                    errorDiv.style.display = 'block';
+                    setTimeout(() => {
+                        errorDiv.style.display = 'none';
+                    }, 5000);
+                };
 
-                    if (!name || name.length < 3) {
-                        alert('Por favor, digite seu nome (mínimo 3 caracteres)');
-                        inputName.focus();
+                const handleSubmit = async () => {
+                    const username = inputId.value.trim();
+                    const password = inputPassword.value.trim();
+                    const confirmPassword = inputConfirmPassword.value.trim();
+
+                    if (!username || !password || !confirmPassword) {
+                        showError('Todos os campos são obrigatórios');
                         return;
                     }
 
-                    if (name.length > 50) {
-                        alert('Nome muito longo (máximo 50 caracteres)');
-                        inputName.focus();
+                    if (username.length < 3) {
+                        showError('Usuário deve ter no mínimo 3 caracteres');
+                        inputId.focus();
                         return;
                     }
 
-                    if (email && !this.isValidEmail(email)) {
-                        alert('Por favor, digite um email válido');
-                        inputEmail.focus();
+                    if (password.length < 4) {
+                        showError('Senha deve ter no mínimo 4 caracteres');
+                        inputPassword.focus();
                         return;
                     }
 
-                    // Salvar dados
-                    this.userName = name;
-                    this.userEmail = email || `usuario_${Date.now()}@chat.local`;
-                    this.authenticated = true;
+                    if (password !== confirmPassword) {
+                        showError('As senhas não correspondem');
+                        inputPassword.value = '';
+                        inputConfirmPassword.value = '';
+                        inputPassword.focus();
+                        return;
+                    }
 
-                    // Salvar localmente (sessionStorage para essa sessão)
-                    sessionStorage.setItem('liveModalUserName', this.userName);
-                    sessionStorage.setItem('liveModalUserEmail', this.userEmail);
+                    btnSubmit.disabled = true;
+                    btnSubmit.style.opacity = '0.6';
+                    btnSubmit.textContent = '⏳ Criando...';
 
-                    console.log('[LiveModal] Usuário autenticado:', this.userName);
+                    try {
+                        const response = await fetch('/api/auth/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: username,
+                                password: password
+                            })
+                        });
 
-                    // Remover modal
-                    loginOverlay.remove();
-                    resolve(true);
+                        const data = await response.json();
+
+                        if (data.ok) {
+                            // Conta criada com sucesso, fazer login automático
+                            this.userName = data.userName || username;
+                            this.userEmail = data.email || `${username}@chat.local`;
+                            this.authenticated = true;
+
+                            sessionStorage.setItem('liveModalUserName', this.userName);
+                            sessionStorage.setItem('liveModalUserEmail', this.userEmail);
+                            sessionStorage.setItem('liveModalUserId', data.id);
+
+                            console.log('[LiveModal] Conta criada e usuário autenticado:', this.userName);
+                            createOverlay.remove();
+                            resolve(true);
+                        } else {
+                            showError(data.error || 'Erro ao criar conta');
+                            btnSubmit.disabled = false;
+                            btnSubmit.style.opacity = '1';
+                            btnSubmit.textContent = '✓ Criar Conta';
+                        }
+                    } catch (error) {
+                        console.error('[LiveModal] Erro ao criar conta:', error);
+                        showError('Erro ao conectar ao servidor. Tente novamente.');
+                        btnSubmit.disabled = false;
+                        btnSubmit.style.opacity = '1';
+                        btnSubmit.textContent = '✓ Criar Conta';
+                    }
                 };
 
                 btnSubmit.addEventListener('click', handleSubmit);
-                inputName.addEventListener('keypress', (e) => {
+                inputConfirmPassword.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') handleSubmit();
                 });
 
-                // Cancelar
                 btnCancel.addEventListener('click', () => {
-                    loginOverlay.remove();
+                    createOverlay.remove();
                     resolve(false);
                 });
             });
         },
 
         /**
-         * Valida email
+         * Mostra o menu de configurações (dropdown)
          */
-        isValidEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
+        showSettingsModal() {
+            // Remover menu anterior se existir
+            const existingMenu = document.querySelector('.live-modal-settings-menu');
+            if (existingMenu) {
+                existingMenu.remove();
+                return;
+            }
+
+            const settingsBtn = document.querySelector('.live-modal-settings-btn');
+            if (!settingsBtn) return;
+
+            // Criar menu dropdown
+            const menu = document.createElement('div');
+            menu.className = 'live-modal-settings-menu';
+            menu.innerHTML = `
+                <div style="padding: 12px; min-width: 280px;">
+                    <div style="font-size: 13px; color: #666; margin-bottom: 12px; font-weight: bold;">Meu Perfil</div>
+                    
+                    <!-- Avatar Preview -->
+                    <div style="text-align: center; margin-bottom: 12px;">
+                        <div class="avatar-preview" style="width: 70px; height: 70px; background: #e0e0e0; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 30px; overflow: hidden;">
+                            👤
+                        </div>
+                    </div>
+
+                    <!-- Upload Avatar -->
+                    <div style="margin-bottom: 10px;">
+                        <input 
+                            type="file" 
+                            class="settings-menu-avatar-input" 
+                            accept="image/*"
+                            style="display: none;"
+                        >
+                        <button class="settings-menu-avatar-btn" style="width: 100%; padding: 8px; background: #9e9e9e; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; transition: background 0.2s;">
+                            📷 Escolher Foto
+                        </button>
+                    </div>
+
+                    <!-- Trocar Nome -->
+                    <div style="margin-bottom: 10px;">
+                        <input 
+                            type="text" 
+                            class="settings-menu-input" 
+                            placeholder="Novo nome"
+                            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; box-sizing: border-box;"
+                        >
+                    </div>
+
+                    <div class="settings-menu-error" style="color: #e74c3c; font-size: 12px; margin-bottom: 10px; min-height: 16px;"></div>
+                    
+                    <button class="settings-menu-save-btn" style="width: 100%; padding: 8px; background: #4a90e2; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: background 0.2s;">
+                        ✓ Salvar
+                    </button>
+                </div>
+            `;
+
+            const inputName = menu.querySelector('.settings-menu-input');
+            const btnAvatar = menu.querySelector('.settings-menu-avatar-btn');
+            const inputAvatar = menu.querySelector('.settings-menu-avatar-input');
+            const btnSave = menu.querySelector('.settings-menu-save-btn');
+            const errorDiv = menu.querySelector('.settings-menu-error');
+            const avatarPreview = menu.querySelector('.avatar-preview');
+
+            let selectedAvatar = null;
+
+            const showError = (msg) => {
+                errorDiv.textContent = msg;
+                setTimeout(() => {
+                    errorDiv.textContent = '';
+                }, 2000);
+            };
+
+            // Carregar dados atuais
+            inputName.value = this.userName || '';
+            if (this.userAvatar) {
+                avatarPreview.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = this.userAvatar;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                avatarPreview.appendChild(img);
+            }
+
+            // Handle avatar upload
+            btnAvatar.addEventListener('click', () => {
+                inputAvatar.click();
+            });
+
+            inputAvatar.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // Validar tamanho (máximo 2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    showError('Foto muito grande (máx 2MB)');
+                    return;
+                }
+
+                // Ler arquivo como base64
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    selectedAvatar = event.target.result;
+                    
+                    // Atualizar preview
+                    avatarPreview.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = selectedAvatar;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    avatarPreview.appendChild(img);
+                    
+                    btnAvatar.textContent = '✓ Foto selecionada';
+                    btnAvatar.style.background = '#27ae60';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            const handleSave = async () => {
+                const newName = inputName.value.trim();
+
+                if (!newName && !selectedAvatar) {
+                    showError('Digite um nome ou escolha uma foto');
+                    return;
+                }
+
+                if (newName && newName.length < 3) {
+                    showError('Mínimo 3 caracteres');
+                    inputName.focus();
+                    return;
+                }
+
+                if (newName && !/^[a-zA-Z0-9]+$/.test(newName)) {
+                    showError('Nome deve conter apenas letras e números');
+                    inputName.focus();
+                    return;
+                }
+
+                btnSave.disabled = true;
+                btnSave.textContent = '⏳';
+
+                try {
+                    const response = await fetch('/api/user/update-profile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: sessionStorage.getItem('liveModalUserId'),
+                            newName: newName || this.userName,
+                            avatar: selectedAvatar
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.ok) {
+                        if (newName) {
+                            this.userName = newName;
+                            sessionStorage.setItem('liveModalUserName', newName);
+                        }
+                        if (selectedAvatar) {
+                            this.userAvatar = selectedAvatar;
+                            sessionStorage.setItem('liveModalUserAvatar', selectedAvatar);
+                        }
+                        
+                        const userDisplay = document.querySelector('.live-modal-user-display');
+                        if (userDisplay) {
+                            let displayHtml = '';
+                            if (this.userAvatar) {
+                                displayHtml += `<img src="${this.userAvatar}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">`;
+                            }
+                            displayHtml += `${this.userName}`;
+                            userDisplay.innerHTML = displayHtml;
+                        }
+
+                        console.log('[LiveModal] Perfil atualizado');
+                        menu.remove();
+                        this.renderChat(); // Atualizar chat com novo avatar
+                    } else {
+                        showError(data.error || 'Erro ao atualizar');
+                        btnSave.disabled = false;
+                        btnSave.textContent = '✓ Salvar';
+                    }
+                } catch (error) {
+                    console.error('[LiveModal] Erro:', error);
+                    showError('Erro na conexão');
+                    btnSave.disabled = false;
+                    btnSave.textContent = '✓ Salvar';
+                }
+            };
+
+            btnSave.addEventListener('click', handleSave);
+            inputName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleSave();
+            });
+
+            // Fechar menu ao clicar fora
+            const closeMenuOnClickOutside = (e) => {
+                if (!menu.contains(e.target) && e.target !== settingsBtn) {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenuOnClickOutside);
+                }
+            };
+
+            document.addEventListener('click', closeMenuOnClickOutside);
+
+            // Posicionar menu
+            settingsBtn.parentElement.style.position = 'relative';
+            settingsBtn.parentElement.appendChild(menu);
+            inputName.focus();
         },
 
         /**
@@ -591,6 +1222,7 @@ window.LiveModal = (function () {
                 user: this.userName,
                 email: this.userEmail,
                 role: this.userRole,
+                avatar: this.userAvatar,
                 text: text,
                 timestamp: new Date().toLocaleTimeString('pt-BR', { 
                     hour: '2-digit', 
@@ -613,22 +1245,10 @@ window.LiveModal = (function () {
             setTimeout(() => {
                 this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
             }, 0);
+
             // Salvar no servidor
             try {
                 await this.saveChatToServer(message);
-                
-                // ✨ Também enviar via WebSocket para sincronização em tempo real
-                if (this.chatWs && this.chatWs.readyState === WebSocket.OPEN) {
-                    const wsMessage = {
-                        type: 'message',
-                        data: {
-                            ...localMsg,
-                            videoId: this.currentVideoId
-                        }
-                    };
-                    this.chatWs.send(JSON.stringify(wsMessage));
-                    console.log('[LiveModal] Mensagem enviada via WebSocket');
-                }
             } catch (error) {
                 console.error('[LiveModal] Erro ao salvar mensagem:', error);
             }
@@ -721,8 +1341,7 @@ window.LiveModal = (function () {
             if (confirm('⚠️ Tem certeza que deseja limpar todo o chat?')) {
                 try {
                     // Enviar comando para servidor
-                    const apiUrl = window.location.origin + '/api/chat/clear';
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch('/api/chat/clear', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',  // Importante: enviar cookies de sessão
@@ -780,8 +1399,7 @@ window.LiveModal = (function () {
             
             try {
                 // Chamar endpoint do servidor para promover ADM (persistir no banco de dados)
-                const apiUrl = window.location.origin + '/api/chat/promote-admin';
-                const response = await fetch(apiUrl, {
+                const response = await fetch('/api/chat/promote-admin', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
@@ -833,8 +1451,7 @@ window.LiveModal = (function () {
 
             try {
                 // Chamar endpoint do servidor para remover ADM (persistir no banco de dados)
-                const apiUrl = window.location.origin + '/api/chat/demote-admin';
-                const response = await fetch(apiUrl, {
+                const response = await fetch('/api/chat/demote-admin', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
@@ -1013,28 +1630,28 @@ window.LiveModal = (function () {
                     }
                 }
                 
-                let roleColor = '#666';
+                let roleColor = this.getUserColor(msg.user);
                 let roleIcon = '';
                 let roleBadge = '';
+                let textShadow = `0 0 10px ${roleColor}`;
                 
                 if (role === 'PROPRIETARIO') {
                     roleColor = '#ff6b6b';
                     roleIcon = '👑';
-                    roleBadge = '<span style="color: #ff6b6b; font-weight: bold; font-size: 11px; margin-left: 8px;">[PROPRIETARIO]</span>';
+                    roleBadge = '';
+                    textShadow = '0 0 10px #ff6b6b';
                 } else if (role === 'ADM') {
                     roleColor = '#ffd700';
                     roleIcon = '⚡';
-                    roleBadge = '<span style="color: #ffd700; font-weight: bold; font-size: 11px; margin-left: 8px;">[ADM]</span>';
+                    roleBadge = '';
+                    textShadow = '0 0 10px #ffd700';
                 }
                 
                 return `
-                    <div class="live-modal-chat-message" style="border-left-color: ${isMine ? '#ff9800' : '#0b5cff'}; opacity: ${isMine ? '1' : '0.95'};">
-                        <div>
-                            <span class="live-modal-chat-user" style="${role !== 'USUARIO' ? `color: ${roleColor};` : ''}">${roleIcon} ${this.escapeHtml(msg.user)}</span>
-                            ${roleBadge}
-                            <span class="live-modal-chat-timestamp">${msg.timestamp}</span>
-                        </div>
-                        <div class="live-modal-chat-text">${this.escapeHtml(msg.text)}</div>
+                    <div class="live-modal-chat-message" style="border-left-color: ${isMine ? '#ff9800' : '#0b5cff'}; opacity: ${isMine ? '1' : '0.95'}; display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 6px;">
+                        ${msg.avatar ? `<img src="${msg.avatar}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">` : '<div style="width: 36px; height: 36px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0;"></div>'}
+                        <span class="live-modal-chat-user" style="color: ${roleColor}; text-shadow: ${textShadow}; font-weight: bold; white-space: nowrap;">${roleIcon} ${this.escapeHtml(msg.user)}</span>
+                        <div class="live-modal-chat-text" style="color: #fff; font-size: 14px;">${this.escapeHtml(msg.text)}</div>
                     </div>
                 `;
             }).join('');
@@ -1048,21 +1665,15 @@ window.LiveModal = (function () {
          */
         async saveChatToServer(message) {
             try {
-                const apiUrl = window.location.origin + '/api/chat';
-                const response = await fetch(apiUrl, {
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(message)
                 });
 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('[LiveModal] Erro ao salvar mensagem:', response.status, errorText);
-                    return;
+                    console.error('[LiveModal] Erro ao salvar mensagem:', response.status);
                 }
-                
-                const data = await response.json();
-                console.log('[LiveModal] Mensagem salva com sucesso:', data);
             } catch (error) {
                 console.error('[LiveModal] Erro de conexão ao salvar mensagem:', error);
             }
@@ -1075,8 +1686,7 @@ window.LiveModal = (function () {
             try {
                 if (!this.currentVideoId) return;
 
-                const apiUrl = window.location.origin + `/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`;
-                const response = await fetch(apiUrl);
+                const response = await fetch(`/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`);
                 if (!response.ok) {
                     console.warn('[LiveModal] Não foi possível carregar chat do servidor');
                     return;
@@ -1101,73 +1711,9 @@ window.LiveModal = (function () {
         },
 
         /**
-         * Conecta ao WebSocket de chat em tempo real
-         */
-        connectChatWebSocket() {
-            if (this.wsConnecting || this.chatWs) return; // Já está conectado ou conectando
-            
-            this.wsConnecting = true;
-            
-            try {
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${protocol}//${window.location.host}/ws/chat?videoId=${encodeURIComponent(this.currentVideoId)}`;
-                
-                console.log('[LiveModal] Conectando ao WebSocket:', wsUrl);
-                
-                this.chatWs = new WebSocket(wsUrl);
-                
-                this.chatWs.onopen = () => {
-                    console.log('[LiveModal WS] Conectado com sucesso');
-                    this.wsConnecting = false;
-                };
-                
-                this.chatWs.onmessage = (event) => {
-                    try {
-                        const message = JSON.parse(event.data);
-                        console.log('[LiveModal WS] Mensagem recebida:', message.type);
-                        
-                        if (message.type === 'message' && message.data) {
-                            // Adicionar mensagem recebida do servidor
-                            const incomingMsg = message.data;
-                            
-                            // Verificar se já existe (evitar duplicatas)
-                            const exists = this.messages.find(m => m.id === incomingMsg.id);
-                            if (!exists) {
-                                this.messages.push(incomingMsg);
-                                this.renderChat();
-                                setTimeout(() => {
-                                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-                                }, 0);
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('[LiveModal WS] Erro ao processar mensagem:', e);
-                    }
-                };
-                
-                this.chatWs.onerror = (error) => {
-                    console.error('[LiveModal WS] Erro:', error);
-                    this.wsConnecting = false;
-                };
-                
-                this.chatWs.onclose = () => {
-                    console.log('[LiveModal WS] Desconectado');
-                    this.chatWs = null;
-                    this.wsConnecting = false;
-                };
-            } catch (e) {
-                console.error('[LiveModal WS] Erro ao criar WebSocket:', e);
-                this.wsConnecting = false;
-            }
-        },
-
-        /**
          * Inicia sincronização automática de chat
          */
         startSync() {
-            // ✨ Conectar ao WebSocket de chat
-            this.connectChatWebSocket();
-            
             if (this.syncInterval) clearInterval(this.syncInterval);
             
             this.syncInterval = setInterval(async () => {
@@ -1181,7 +1727,7 @@ window.LiveModal = (function () {
                     
                     // Sincronizar proprietário do servidor
                     try {
-                        const propUrl = window.location.origin + `/api/chat/proprietario?videoId=${encodeURIComponent(this.currentVideoId)}`;
+                        const propUrl = `/api/chat/proprietario?videoId=${encodeURIComponent(this.currentVideoId)}`;
                         const propResp = await fetch(propUrl);
                         if (propResp.ok) {
                             const propData = await propResp.json();
@@ -1194,8 +1740,7 @@ window.LiveModal = (function () {
                         console.error(`[DEBUG] Erro ao sincronizar proprietário:`, e);
                     }
                     
-                    const apiUrl = window.location.origin + `/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`;
-                    const response = await fetch(apiUrl);
+                    const response = await fetch(`/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`);
                     if (!response.ok) return;
 
                     const serverMessages = await response.json();
@@ -1238,16 +1783,6 @@ window.LiveModal = (function () {
             if (this.syncInterval) {
                 clearInterval(this.syncInterval);
                 this.syncInterval = null;
-            }
-            
-            // ✨ Fechar WebSocket
-            if (this.chatWs) {
-                try {
-                    this.chatWs.close();
-                } catch (e) {
-                    console.warn('[LiveModal] Erro ao fechar WebSocket:', e);
-                }
-                this.chatWs = null;
             }
         },
 
