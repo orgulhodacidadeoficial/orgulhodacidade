@@ -1407,21 +1407,20 @@ app.post('/api/chat', express.json(), async (req, res) => {
     console.log(`[CHAT] Salvando mensagem: ${cleanUser} (${cleanRole}) no vídeo ${videoId}`);
     
     if (USE_POSTGRES) {
-      // PostgreSQL - Tentar com email/role, se falhar, sem eles
+      // PostgreSQL - Tentar sem colunas opcionais primeiro
       try {
+        // Tentar inserir SEM email e role (mais compatível)
         const result = await pgQuery(
-          `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-          [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
+          `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
+          [videoId, cleanUser, cleanText, timestamp]
         );
-        console.log(`[CHAT] ✅ Mensagem salva (com role) com ID: ${result.rows[0].id}`);
+        console.log(`[CHAT] ✅ Mensagem salva (sem email/role) com ID: ${result.rows[0].id}`);
         
         // ✨ Broadcast via WebSocket
         const messageToSend = {
           id: result.rows[0].id,
           videoId,
           user: cleanUser,
-          email: cleanEmail,
-          role: cleanRole,
           text: cleanText,
           timestamp,
           createdAt: new Date().toISOString()
@@ -1430,19 +1429,22 @@ app.post('/api/chat', express.json(), async (req, res) => {
         
         return res.json({ success: true, id: result.rows[0].id });
       } catch (err) {
-        console.warn('[CHAT] Erro ao salvar com email/role:', err.message);
+        console.warn('[CHAT] Erro ao salvar sem email/role:', err.message);
+        // Se falhar, tentar COM email e role
         try {
           const result = await pgQuery(
-            `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
-            [videoId, cleanUser, cleanText, timestamp]
+            `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+            [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
           );
-          console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.rows[0].id}`);
+          console.log(`[CHAT] ✅ Mensagem salva (com email/role) com ID: ${result.rows[0].id}`);
           
           // ✨ Broadcast via WebSocket
           const messageToSend = {
             id: result.rows[0].id,
             videoId,
             user: cleanUser,
+            email: cleanEmail,
+            role: cleanRole,
             text: cleanText,
             timestamp,
             createdAt: new Date().toISOString()
@@ -1456,21 +1458,19 @@ app.post('/api/chat', express.json(), async (req, res) => {
         }
       }
     } else {
-      // SQLite - Tentar com email/role, se falhar, sem eles
+      // SQLite - Tentar sem email/role primeiro
       try {
         const result = await dbRun(
-          `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
-          [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
+          `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES (?, ?, ?, ?)`,
+          [videoId, cleanUser, cleanText, timestamp]
         );
-        console.log(`[CHAT] ✅ Mensagem salva (com role) com ID: ${result.lastID}`);
+        console.log(`[CHAT] ✅ Mensagem salva (sem email/role) com ID: ${result.lastID}`);
         
         // ✨ Broadcast via WebSocket
         const messageToSend = {
           id: result.lastID,
           videoId,
           user: cleanUser,
-          email: cleanEmail,
-          role: cleanRole,
           text: cleanText,
           timestamp,
           createdAt: new Date().toISOString()
@@ -1479,19 +1479,21 @@ app.post('/api/chat', express.json(), async (req, res) => {
         
         return res.json({ success: true, id: result.lastID });
       } catch (err) {
-        console.warn('[CHAT] Erro ao salvar com email/role:', err.message);
+        console.warn('[CHAT] Erro ao salvar sem email/role:', err.message);
         try {
           const result = await dbRun(
-            `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES (?, ?, ?, ?)`,
-            [videoId, cleanUser, cleanText, timestamp]
+            `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
+            [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
           );
-          console.log(`[CHAT] ✅ Mensagem salva (sem role) com ID: ${result.lastID}`);
+          console.log(`[CHAT] ✅ Mensagem salva (com email/role) com ID: ${result.lastID}`);
           
           // ✨ Broadcast via WebSocket
           const messageToSend = {
             id: result.lastID,
             videoId,
             user: cleanUser,
+            email: cleanEmail,
+            role: cleanRole,
             text: cleanText,
             timestamp,
             createdAt: new Date().toISOString()
