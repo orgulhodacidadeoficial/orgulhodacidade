@@ -2128,13 +2128,19 @@ ensureStorageFiles()
     });
 
     // Start the HTTP server (use the `server` instance so WebSocket Server is attached correctly)
-    server.listen(PORT, () => {
-      console.log(`Server started on 0.0.0.0:${PORT}`);
-      console.log(`WebSocket server para playlist em: ws://<host>:${PORT}/ws/playlist`);
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ Server started on 0.0.0.0:${PORT}`);
+      console.log(`📻 WebSocket server para playlist em: ws://<host>:${PORT}/ws/playlist`);
+    });
+    
+    // Handle server errors
+    server.on('error', (err) => {
+      console.error('❌ Server error:', err);
+      process.exit(1);
     });
   })
   .catch((err) => {
-    console.error('Failed to ensure storage files:', err);
+    console.error('❌ Failed to ensure storage files:', err);
     process.exit(1);
   });
 

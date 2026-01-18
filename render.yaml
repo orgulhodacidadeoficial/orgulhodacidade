@@ -3,8 +3,11 @@ services:
     name: orgulho-da-cidade
     runtime: node
     plan: free
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: npm install --legacy-peer-deps
+    startCommand: node backend/server.js
+    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
+      - key: SESSION_SECRET
+        value: render-production-session-secret
