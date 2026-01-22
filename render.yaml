@@ -9,8 +9,4 @@ services:
         value: production
       - key: PORT
         value: 3000
-    routes:
-      - path: /
-        matchType: prefix
-        dest: /index.html
 
