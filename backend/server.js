@@ -325,12 +325,15 @@ const server = http.createServer(app);
 const sseClients = new Set();
 
 // WebSocket server para playlist em tempo real
-const wss = new WebSocket.Server({ server, path: '/ws/playlist' });
+const wss = new WebSocket.Server({ 
+  server, 
+  path: '/ws/playlist',
+  perMessageDeflate: false  // Disable compression to avoid frame issues
+});
 const playlistClients = new Set();
 
-// WebSocket server para chat em tempo real
-const chatWss = new WebSocket.Server({ server, path: '/ws/chat' });
-const chatClients = new Map(); // { videoId: Set<WebSocket> }
+// Log WebSocket server initialization
+console.log('[WebSocket] Inicializando servidor de playlist WebSocket');
 
 function sendSseEvent(eventName, data) {
   const payload = `event: ${eventName}\n` + `data: ${typeof data === 'string' ? data : JSON.stringify(data)}\n\n`;
@@ -1335,6 +1338,8 @@ app.get('/api/eventos', async (req, res) => {
 
 // ===== WEBSOCKET CHAT =====
 // Handler para WebSocket de chat em tempo real
+// DESABILITADO PARA EVITAR CONFLITOS - Chat usando apenas HTTP endpoints
+/*
 chatWss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const videoId = url.searchParams.get('videoId');
@@ -1385,6 +1390,7 @@ chatWss.on('connection', (ws, req) => {
     console.warn('[Chat WS] Erro:', err.message);
   });
 });
+*/
 
 // ===== CHAT ENDPOINTS =====
 
@@ -2051,6 +2057,7 @@ ensureStorageFiles()
     // Setup WebSocket server para playlist
     wss.on('connection', (ws, req) => {
       console.log(`[Playlist WS] Nova conexão - Total: ${playlistClients.size + 1}`);
+      console.log(`[Playlist WS] Client IP: ${req.socket.remoteAddress}`);
       playlistClients.add(ws);
 
       // Envia confirmação de conexão + playlist atual
@@ -2065,14 +2072,18 @@ ensureStorageFiles()
       }));
 
       console.log(`[Playlist WS] Enviando ${playlistToSend.length} músicas para novo cliente`);
-      ws.send(JSON.stringify({ 
-        action: 'connected', 
-        data: {
-          message: 'Conectado à playlist em tempo real',
-          playlist: playlistToSend
-        },
-        timestamp: new Date().toISOString()
-      }));
+      try {
+        ws.send(JSON.stringify({ 
+          action: 'connected', 
+          data: {
+            message: 'Conectado à playlist em tempo real',
+            playlist: playlistToSend
+          },
+          timestamp: new Date().toISOString()
+        }));
+      } catch (err) {
+        console.error('[Playlist WS] Erro ao enviar mensagem de conexão:', err.message);
+      }
 
       // Recebe mensagens do cliente
       ws.on('message', (rawData) => {
@@ -2129,7 +2140,9 @@ ensureStorageFiles()
       });
 
       ws.on('error', (err) => {
-        console.warn('[Playlist WS] Erro:', err.message);
+        console.error('[Playlist WS] Erro na conexão:', err.message);
+        console.error('[Playlist WS] Error details:', err);
+        playlistClients.delete(ws);
       });
     });
 
