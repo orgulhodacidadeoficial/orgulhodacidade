@@ -16,6 +16,7 @@
     let reconnectAttempts = 0;
     const MAX_RECONNECT_ATTEMPTS = 5;
     const RECONNECT_DELAY = 3000;
+    let heartbeatInterval = null;
     
     // Controle de reprodução em sequência
     let currentPlayingIndex = -1;
@@ -290,12 +291,30 @@
                 reconnectAttempts = 0;
                 updateSyncStatus();
                 console.log('[Playlist WS] Conectado com sucesso');
+                
+                // Inicia heartbeat
+                if (heartbeatInterval) clearInterval(heartbeatInterval);
+                heartbeatInterval = setInterval(() => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        try {
+                            ws.send(JSON.stringify({ action: 'ping', timestamp: new Date().toISOString() }));
+                        } catch (e) {
+                            console.warn('[Playlist WS] Erro ao enviar ping:', e.message);
+                        }
+                    }
+                }, 30000); // Ping a cada 30 segundos
             };
 
             ws.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
                     console.log('[Playlist WS] Mensagem recebida:', message.action);
+
+                    // Processa ping/pong para manter conexão
+                    if (message.action === 'pong') {
+                        console.log('[Playlist WS] Pong recebido');
+                        return;
+                    }
 
                     // Processa mensagens recebidas
                     if (message.action === 'connected') {
@@ -328,6 +347,12 @@
                 wsConnected = false;
                 updateSyncStatus();
                 console.warn('[Playlist WS] Desconectado');
+                
+                // Limpa heartbeat
+                if (heartbeatInterval) {
+                    clearInterval(heartbeatInterval);
+                    heartbeatInterval = null;
+                }
                 
                 // Tenta reconectar
                 if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {

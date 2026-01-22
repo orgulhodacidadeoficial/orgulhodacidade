@@ -2080,6 +2080,12 @@ ensureStorageFiles()
           const message = JSON.parse(rawData);
           console.log(`[Playlist WS] Mensagem recebida: ${message.action}`);
 
+          // Processa ping/pong para manter conexão
+          if (message.action === 'ping') {
+            ws.send(JSON.stringify({ action: 'pong', timestamp: new Date().toISOString() }));
+            return;
+          }
+
           // Processa diferentes ações
           if (message.action === 'music_added' && message.data) {
             // Valida que a música tem os campos necessários
