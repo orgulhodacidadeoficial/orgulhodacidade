@@ -5,11 +5,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin Login</title>
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-    .card{background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.08);width:320px}
-    input{width:100%;padding:0.6rem;margin-top:0.6rem;border-radius:6px;border:1px solid #ddd}
-    button{margin-top:0.8rem;padding:0.6rem 0.8rem;width:100%;background:#0046ad;color:#fff;border:none;border-radius:6px;cursor:pointer}
-    .err{color:#b00020;margin-top:0.6rem}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:url('images/Fundo.png') center/cover no-repeat fixed;color:#111;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .card{background:rgb(0 0 0 / 1%);;padding:2.5rem;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.3),0 0 40px rgba(255,140,0,0.2);width:340px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.5);text-align:center}
+    .card h3{margin:0 0 1rem 0;background:linear-gradient(135deg, #0024fd 0%, #fd0101 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:1.8rem;font-weight:700;letter-spacing:0.5px;text-shadow:none}
+    .card p{margin:0 0 1.8rem 0;color:#000000;font-size:0.95rem;line-height:1.6;font-weight:500}
+    input{width:100%;padding:0.85rem;margin-top:1rem;border-radius:10px;border:2px solid #e0e0e0;font-size:0.95rem;transition:all 0.3s ease;box-sizing:border-box}
+    input:focus{outline:none;border-color:#0046ad;box-shadow:0 0 0 3px rgba(0,70,173,0.1);background:#f8fbff}
+    input::placeholder{color:#999}
+    button{margin-top:1.5rem;padding:0.85rem 1rem;width:100%;background:linear-gradient(135deg,#0046ad 0%,#ff8a00 100%);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:0.95rem;font-weight:600;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(0,70,173,0.3)}
+    button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,140,0,0.4)}
+    button:active{transform:translateY(0)}
+    .err{color:#d32f2f;margin-top:1rem;font-size:0.9rem;padding:0.5rem;background:#ffebee;border-radius:6px;border-left:3px solid #d32f2f;padding-left:10px;text-align:left}
+    #site-admin-badge{display:none!important}
   </style>
   <!-- Ícones do site (favicon) -->
   <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
@@ -21,7 +28,7 @@
 <body>
   <div class="card">
     <h3>Área Administrativa</h3>
-    <p>Informe a senha para acessar as inscrições e contatos.</p>
+    <p>Informe a senha para acessar.</p>
     <input id="pwd" type="password" placeholder="Senha" autocomplete="off" />
     <button id="loginBtn">Entrar</button>
     <div id="msg" class="err" role="alert" aria-live="polite"></div>
