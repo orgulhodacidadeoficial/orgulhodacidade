@@ -444,7 +444,7 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 
 const PORT = process.env.PORT || 3000;
 // Admin password: prefer environment variable in production
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1234';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'orgulho2026';
 if (!process.env.ADMIN_PASSWORD) {
   console.warn('[SECURITY] ADMIN_PASSWORD not set in environment — using default development password. Change in production.');
 }

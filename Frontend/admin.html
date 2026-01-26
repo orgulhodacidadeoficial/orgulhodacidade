@@ -85,6 +85,9 @@
     .logout{background:#dc2626}
     .btn-delete{background:#dc2626}
     .btn-delete:hover{background:#b91c1c}
+    #btnRelatorio{background:#0046ad;color:#fff;padding:0.6rem 1rem;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s ease}
+    #btnRelatorio:hover{background:#003a8f;transform:translateY(-2px);box-shadow:0 2px 8px rgba(0,70,173,0.3)}
+    #btnRelatorio:active{transform:translateY(0)}
     pre{white-space:pre-wrap;word-break:break-word}
     @media (max-width: 768px) {
       .card{padding:0.75rem;border-radius:6px;margin-top:0.75rem}
@@ -158,7 +161,7 @@
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
             <h3 style="margin:0">Inscrições por Tipo</h3>
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-              <button id="btnRelatorio" style="background:#0046ad">📋 Gerar Relatório</button>
+              <button id="btnRelatorio">📋 Gerar Relatório</button>
               <button id="clearInsBtn" class="btn-delete" style="padding:0.45rem 0.6rem">🗑️ Limpar todos</button>
             </div>
           </div>
@@ -229,6 +232,22 @@
           contentEl.innerHTML = html;
           const grid = document.getElementById('inscricoesGrid');
           const searchInput = document.getElementById('searchInscricoes');
+          
+          // Attach event listener to the "Gerar Relatório" button
+          const btnRelatorio = document.getElementById('btnRelatorio');
+          if (btnRelatorio) {
+            btnRelatorio.addEventListener('click', () => {
+              console.log('[DEBUG] Botão Gerar Relatório clicado');
+              try {
+                const url = './relatorio-inscricoes.html';
+                console.log('[DEBUG] Abrindo URL:', url);
+                window.open(url, '_blank');
+              } catch (err) {
+                console.error('[ERROR] Erro ao abrir relatório:', err);
+                alert('Erro ao abrir relatório: ' + err.message);
+              }
+            });
+          }
           
           function renderCards(items) {
             if (items.length === 0) {
@@ -433,14 +452,6 @@
 
         // attach Ver (download Word) handlers
         attachVerHandlers(withIndex);
-
-        
-
-        // attach delete handlers for each inscription
-        // Botão de relatório
-        document.getElementById('btnRelatorio').addEventListener('click', () => {
-          window.open('/relatorio-inscricoes.html', '_blank');
-        });
 
         // Botão de limpar todas as inscrições
         setTimeout(() => {
