@@ -1006,7 +1006,7 @@
         console.log('⏸️ [syncWithServer] Currently editing (id=' + editingId + '), skipping sync to avoid overwriting changes');
         return;
       }
-      const response = await fetch('/api/events', { credentials: 'same-origin' });
+      const response = await fetch('/api/eventos', { credentials: 'same-origin' });
       if (!response.ok) {
         console.warn('Falha ao sincronizar com servidor');
         return;
