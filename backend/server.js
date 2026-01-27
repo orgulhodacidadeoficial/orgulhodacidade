@@ -1318,7 +1318,8 @@ app.get('/api/eventos', async (req, res) => {
       try {
         const result = await pgQuery(`SELECT data FROM events ORDER BY createdAt DESC LIMIT 1`);
         if (result.rows && result.rows.length > 0) {
-          events = JSON.parse(result.rows[0].data);
+          const data = result.rows[0].data;
+          events = typeof data === 'string' ? JSON.parse(data) : (Array.isArray(data) ? data : []);
           console.log('[GET /api/eventos] ✅ Carregadas do PostgreSQL');
           return res.json(events || []);
         }
