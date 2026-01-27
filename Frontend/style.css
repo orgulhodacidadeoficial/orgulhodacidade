@@ -202,7 +202,7 @@
     }
 
     .brincante-info h3 {
-        font-size: 0.95rem;
+        font-size: 0.7rem;
         margin: 0 0 2px 0;
     }
 
@@ -433,9 +433,7 @@
 /* Header da seção de seletiva */
 .seletiva-header-section {
     text-align: center;
-    margin-bottom: 50px;
-    margin-top: 80px;
-    padding-top: 40px;
+    margin-bottom: 50px;   
     animation: slideInDown 0.6s ease;
 }
 
@@ -823,7 +821,7 @@ main.home-content h1
         font-size: 2.2rem; /* smaller for narrow viewports */
         line-height: 1.05;
         letter-spacing: -0.5px;
-        margin-top: 18px;
+        margin-top: -30px;
         margin-bottom: 8px;
         animation: none; /* disable pulsing that can cause overflow */
         -webkit-text-fill-color: transparent; /* keep gradient text */

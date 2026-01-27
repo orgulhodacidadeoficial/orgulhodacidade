@@ -109,6 +109,7 @@
     position: absolute;
     bottom: 24px;
     left: 50%;
+    transform: translateX(-50%);
     height: auto; /* let slide height be determined by its content (image) */
     display: flex;
     gap: 12px;
