@@ -1320,20 +1320,27 @@ app.get('/api/eventos', async (req, res) => {
         if (result.rows && result.rows.length > 0) {
           const data = result.rows[0].data;
           events = typeof data === 'string' ? JSON.parse(data) : (Array.isArray(data) ? data : []);
-          console.log('[GET /api/eventos] ✅ Carregadas do PostgreSQL');
-          return res.json(events || []);
+          console.log('[GET /api/eventos] ✅ Carregadas ' + events.length + ' apresentações do PostgreSQL');
+          return res.json(Array.isArray(events) ? events : []);
+        } else {
+          // Tabela existe mas está vazia - retornar array vazio, não fallback
+          console.log('[GET /api/eventos] ℹ️  PostgreSQL vazio, retornando array vazio');
+          return res.json([]);
         }
       } catch (e) {
-        console.warn('[GET /api/eventos] Aviso ao ler PostgreSQL:', e.message);
+        console.error('[GET /api/eventos] ❌ Erro ao ler PostgreSQL:', e.message);
+        // Em produção, não fallback para JSON - retornar vazio é mais seguro que dados antigos
+        return res.json([]);
       }
     }
     
     // Fallback para JSON (dev local)
     events = await readJson('events');
+    console.log('[GET /api/eventos] Carregadas ' + (events ? events.length : 0) + ' apresentações do JSON');
     return res.json(events || []);
   } catch (err) {
     console.error('Erro carregando events.json (alias /api/eventos):', err);
-    return res.status(500).json({ error: 'failed' });
+    return res.json([]);
   }
 });
 
