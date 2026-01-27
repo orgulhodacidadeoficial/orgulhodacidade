@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin - Inscrições</title>
+  <link href="https://fonts.googleapis.com/css2?family=Blue+Willow:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    body{font-family:Inter,Arial,sans-serif;margin:0;background:#f5f7fa;color:#111;-webkit-text-size-adjust:100%;overflow-x:hidden}
-    header{background:linear-gradient(135deg, #0b3a91 0%, #0052cc 100%);color:#fff;padding:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;box-shadow:0 2px 10px rgba(11,58,145,0.15)}
-    header h1{font-size:1.1rem;margin:0}
+    body{font-family:Inter,Arial,sans-serif;margin:0;background:url('images/Fundo.png') center/cover no-repeat fixed;color:#111;-webkit-text-size-adjust:100%;overflow-x:hidden}
+    header{background: linear-gradient(135deg, #4b00d7 0%, #4b00d7 100%);color:#fff;padding:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;box-shadow:0 2px 10px rgba(11,58,145,0.15)}
+    header h1{font-family:'Blue Willow',serif;font-size:1.6rem;margin:0;font-weight:700;letter-spacing:1px;text-shadow:0 2px 4px rgba(0,0,0,0.3)}
     .wrap{max-width:1200px;margin:0.5rem auto;padding:0.75rem}
     .row{display:flex;gap:1rem;flex-wrap:wrap}
     .compact-list{display:flex;flex-direction:column;gap:1rem}
@@ -16,14 +17,14 @@
     .compact-datetime{color:#666;font-size:0.85rem;margin-bottom:0.25rem}
     .compact-name{font-weight:600;font-size:1.1rem;margin-bottom:0.25rem}
     .compact-part{color:#0b5cff;font-weight:500;text-transform:capitalize}
-    .detail-row{display:grid;grid-template-columns:140px 1fr;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid #eee}
+    .detail-row{display:grid;grid-template-columns:140px 1f.cardr;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid #eee}
     .detail-row:last-child{border:none}
     .detail-row strong{color:#555;font-size:0.9rem}
     
     /* Search and filter styles */
     .section-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
     .section-title{margin:0;color:#0b3a91;font-size:1.5rem}
-    .section-stats{color:#666;font-size:0.95rem;font-weight:500}
+    .section-stats{color:#ffffff;font-size:0.95rem;font-weight:500}
     .search-filter{display:flex;gap:0.75rem;flex:1;min-width:300px;flex-wrap:wrap}
     .search-input{padding:0.6rem 1rem;border:1px solid #ddd;border-radius:6px;font-size:0.95rem;flex:1;min-width:200px}
     .search-input:focus{outline:none;border-color:#0b5cff;box-shadow:0 0 0 3px rgba(11,92,255,0.1)}
@@ -73,22 +74,23 @@
       .preview-table th,.preview-table td{padding:0.5rem;font-size:0.9rem}
       .btn-download,.btn-cancel{width:100%;padding:0.75rem;font-size:0.95rem;text-align:center}
     }
-    .card{background:#fff;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.06);padding:1.25rem;flex:1;min-width:300px;margin-top:1rem}
+    .card{background: #4b00d74a;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,0.06);padding:1.25rem;flex:1;min-width:300px;margin-top:1rem}
     table{width:100%;border-collapse:collapse;font-size:0.95rem}
     th{padding:0.75rem;border-bottom:2px solid #ddd;text-align:left;font-weight:600;color:#444}
     td{padding:0.75rem;border-bottom:1px solid #eee;text-align:left}
     td pre{margin:0;font-family:inherit;font-size:inherit}
     tr:hover{background:#f8f9ff}
     .controls{display:flex;gap:0.5rem}
-    button{background:#0046ad;color:#fff;border:none;padding:0.45rem 0.6rem;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:0.9rem;transition:all 0.2s ease}
+    button{background:#baa6dfad;color:#fff;border:none;padding:0.45rem 0.6rem;border-radius:6px;cursor:pointer;white-space:nowrap;font-size:0.9rem;transition:all 0.2s ease}
     button:hover{opacity:0.9;transform:translateY(-1px)}
     .logout{background:#dc2626}
     .btn-delete{background:#dc2626}
     .btn-delete:hover{background:#b91c1c}
-    #btnRelatorio{background:#0046ad;color:#fff;padding:0.6rem 1rem;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s ease}
+    #btnRelatorio{background:#3d79d1;;color:#fff;padding:0.6rem 1rem;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:all 0.2s ease}
     #btnRelatorio:hover{background:#003a8f;transform:translateY(-2px);box-shadow:0 2px 8px rgba(0,70,173,0.3)}
     #btnRelatorio:active{transform:translateY(0)}
     pre{white-space:pre-wrap;word-break:break-word}
+    #site-admin-badge{display:none!important}
     @media (max-width: 768px) {
       .card{padding:0.75rem;border-radius:6px;margin-top:0.75rem}
       table{font-size:0.85rem}
@@ -157,9 +159,9 @@
         // ou cards (mobile/tablet). Detecta viewport width
         const isCompact = true; // Sempre usar cards
 
-        let html = `<div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
-            <h3 style="margin:0">Inscrições por Tipo</h3>
+        let html = `<div class="card" style="border:3px solid #ff8a00;background:linear-gradient(135deg, rgb(0 0 0 / 54%) 0%, rgba(0, 70, 173, 0.02) 100%);box-shadow:0 0 20px rgba(255,138,0,0.15), 0 8px 24px rgba(0,0,0,0.1)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;padding-bottom:1rem;border-bottom:2px solid #ff8a00">
+            <h3 style="margin:0;font-family:'Poppins','Trebuchet MS','Gill Sans',sans-serif;color:#ff8a00;font-size:1.8rem;font-weight:900;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.15);text-transform:uppercase">📊 Inscrições por Tipo</h3>
             <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
               <button id="btnRelatorio">📋 Gerar Relatório</button>
               <button id="clearInsBtn" class="btn-delete" style="padding:0.45rem 0.6rem">🗑️ Limpar todos</button>
@@ -386,6 +388,12 @@
                       y: {
                         beginAtZero: true,
                         ticks: { stepSize: 1 }
+                      },
+                      x: {
+                        ticks: {
+                          color: '#ffffff',
+                          font: { size: 12, weight: 'bold' }
+                        }
                       }
                     }
                   }
@@ -616,10 +624,10 @@
           assuntos[ass] = (assuntos[ass] || 0) + 1;
         });
 
-        let html = `<div class="card">
-          <div class="section-header">
+        let html = `<div class="card" style="border:3px solid #ff8a00;background:linear-gradient(135deg, rgb(0 0 0 / 54%) 0%, rgba(0, 70, 173, 0.02) 100%);box-shadow:0 0 20px rgba(255,138,0,0.15), 0 8px 24px rgba(0,0,0,0.1)">
+          <div class="section-header" style="padding-bottom:1rem;border-bottom:2px solid #ff8a00;margin-bottom:1rem">
             <div>
-              <h2 class="section-title">📧 Contatos</h2>
+              <h2 class="section-title" style="font-family:'Poppins','Trebuchet MS','Gill Sans',sans-serif;color:#ff8a00;font-size:1.8rem;font-weight:900;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.15);text-transform:uppercase">📧 Contatos</h2>
               <p class="section-stats">${arr.length} ${arr.length === 1 ? 'contato' : 'contatos'} registrado${arr.length === 1 ? '' : 's'}</p>
             </div>
             <button id="clearContBtn" class="btn-delete" style="padding:0.6rem 1rem">
@@ -857,10 +865,10 @@
           return;
         }
         
-        let html = `<div class="card">
-          <div class="section-header">
+        let html = `<div class="card" style="border:3px solid #ff8a00;background:linear-gradient(135deg, rgb(0 0 0 / 54%) 0%, rgba(0, 70, 173, 0.02) 100%);box-shadow:0 0 20px rgba(255,138,0,0.15), 0 8px 24px rgba(0,0,0,0.1)">
+          <div class="section-header" style="padding-bottom:1rem;border-bottom:2px solid #ff8a00;margin-bottom:1rem">
             <div>
-              <h2 class="section-title">🎭 Contratações</h2>
+              <h2 class="section-title" style="font-family:'Poppins','Trebuchet MS','Gill Sans',sans-serif;color:#ff8a00;font-size:1.8rem;font-weight:900;letter-spacing:1.5px;text-shadow:0 2px 8px rgba(0,0,0,0.15);text-transform:uppercase">🎭 Contratações</h2>
               <p class="section-stats">${arr.length} contrata${arr.length === 1 ? 'ção' : 'ções'} registrada${arr.length === 1 ? '' : 's'}</p>
             </div>
             <button id="clearConrBtn" class="btn-delete" style="padding:0.6rem 1rem">
