@@ -18,6 +18,8 @@ logs/
 data/config.json
 data/*.secret.json
 data/*.db
+data/app.db.backup
+data/app.db.bak.*
 .env.*
 .cache/
 *.log
