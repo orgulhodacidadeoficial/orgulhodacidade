@@ -55,23 +55,21 @@ window.LiveModal = (function () {
             const header = document.createElement('div');
             header.className = 'live-modal-header';
             header.innerHTML = `
-                <h2 class="live-modal-title">Transmissão ao vivo</h2>
-                <span class="live-modal-user-display" style="flex: 1; margin-left: 20px; font-size: 14px; display: flex; align-items: center; gap: 8px;"></span>
-                <button class="live-modal-settings-btn" style="padding: 6px 12px; margin-right: 8px; background: #4a90e2; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;" aria-label="Configurações">
-                    ⚙️
-                </button>
-                <button class="live-modal-logout-btn" style="padding: 6px 12px; margin-right: 8px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;" aria-label="Logout">
-                    Sair
-                </button>
-                <button class="live-modal-close-btn" aria-label="Fechar transmissão">
-                    <i class="fas fa-times"></i>
-                </button>
+                <div class="live-modal-header-left">
+                    <h2 class="live-modal-title">Transmissão ao vivo</h2>
+                    <span class="live-modal-user-display" style="margin-left: 20px; font-size: 14px; display: flex; align-items: center; gap: 8px;"></span>
+                </div>
+                <div class="live-modal-header-right">
+                    <button class="live-modal-settings-btn" aria-label="Configurações">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="live-modal-close-btn" aria-label="Fechar transmissão">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             `;
             this.closeBtn = header.querySelector('.live-modal-close-btn');
-            const logoutBtn = header.querySelector('.live-modal-logout-btn');
             const settingsBtn = header.querySelector('.live-modal-settings-btn');
-            
-            logoutBtn.addEventListener('click', () => this.logout());
             
             if (settingsBtn) {
                 settingsBtn.addEventListener('click', () => this.showSettingsModal());
@@ -623,6 +621,9 @@ window.LiveModal = (function () {
                             sessionStorage.setItem('liveModalUserEmail', this.userEmail);
                             sessionStorage.setItem('liveModalUserId', data.id);
 
+                            // Recarregar dados para garantir que authenticated está true
+                            this.loadUserData();
+
                             console.log('[LiveModal] Usuário autenticado:', this.userName);
 
                             // Remover modal
@@ -901,7 +902,7 @@ window.LiveModal = (function () {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
-                                username: username,
+                                id: username,
                                 password: password
                             })
                         });
@@ -917,6 +918,9 @@ window.LiveModal = (function () {
                             sessionStorage.setItem('liveModalUserName', this.userName);
                             sessionStorage.setItem('liveModalUserEmail', this.userEmail);
                             sessionStorage.setItem('liveModalUserId', data.id);
+
+                            // Recarregar dados para garantir que authenticated está true
+                            this.loadUserData();
 
                             console.log('[LiveModal] Conta criada e usuário autenticado:', this.userName);
                             createOverlay.remove();
@@ -1001,8 +1005,15 @@ window.LiveModal = (function () {
 
                     <div class="settings-menu-error" style="color: #e74c3c; font-size: 12px; margin-bottom: 10px; min-height: 16px;"></div>
                     
-                    <button class="settings-menu-save-btn" style="width: 100%; padding: 8px; background: #4a90e2; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: background 0.2s;">
+                    <button class="settings-menu-save-btn" style="width: 100%; padding: 8px; background: #4a90e2; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: background 0.2s; margin-bottom: 12px;">
                         ✓ Salvar
+                    </button>
+
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 8px 0;">
+
+                    <!-- Botão Sair -->
+                    <button class="settings-menu-logout-btn" style="width: 100%; padding: 8px; background: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.2s;">
+                        🚪 Sair
                     </button>
                 </div>
             `;
@@ -1011,8 +1022,17 @@ window.LiveModal = (function () {
             const btnAvatar = menu.querySelector('.settings-menu-avatar-btn');
             const inputAvatar = menu.querySelector('.settings-menu-avatar-input');
             const btnSave = menu.querySelector('.settings-menu-save-btn');
+            const btnLogout = menu.querySelector('.settings-menu-logout-btn');
             const errorDiv = menu.querySelector('.settings-menu-error');
             const avatarPreview = menu.querySelector('.avatar-preview');
+
+            // Event listener para logout
+            if (btnLogout) {
+                btnLogout.addEventListener('click', () => {
+                    this.logout();
+                    menu.remove();
+                });
+            }
 
             let selectedAvatar = null;
 
@@ -1025,6 +1045,8 @@ window.LiveModal = (function () {
 
             // Carregar dados atuais
             inputName.value = this.userName || '';
+            console.log('[Settings] Nome carregado:', this.userName);
+            
             if (this.userAvatar) {
                 avatarPreview.innerHTML = '';
                 const img = document.createElement('img');
@@ -1032,28 +1054,48 @@ window.LiveModal = (function () {
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = 'cover';
+                img.style.borderRadius = '50%';
                 avatarPreview.appendChild(img);
+                console.log('[Settings] Avatar carregado');
             }
 
             // Handle avatar upload
             btnAvatar.addEventListener('click', () => {
+                console.log('[Settings] Clicou em escolher foto');
                 inputAvatar.click();
             });
 
             inputAvatar.addEventListener('change', (e) => {
+                console.log('[Settings] Change event disparado');
                 const file = e.target.files[0];
-                if (!file) return;
+                if (!file) {
+                    console.log('[Settings] Nenhum arquivo selecionado');
+                    return;
+                }
 
-                // Validar tamanho (máximo 2MB)
-                if (file.size > 2 * 1024 * 1024) {
-                    showError('Foto muito grande (máx 2MB)');
+                console.log('[Settings] Arquivo:', file.name, 'Size:', file.size);
+
+                // Validar tipo
+                if (!file.type.startsWith('image/')) {
+                    showError('Selecione uma imagem válida');
+                    return;
+                }
+
+                // Validar tamanho (máximo 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showError('Foto muito grande (máx 5MB)');
                     return;
                 }
 
                 // Ler arquivo como base64
                 const reader = new FileReader();
+                reader.onerror = (err) => {
+                    console.error('[Settings] Erro ao ler:', err);
+                    showError('Erro ao carregar foto');
+                };
                 reader.onload = (event) => {
                     selectedAvatar = event.target.result;
+                    console.log('[Settings] Base64 gerado, tamanho:', selectedAvatar.length);
                     
                     // Atualizar preview
                     avatarPreview.innerHTML = '';
@@ -1062,16 +1104,19 @@ window.LiveModal = (function () {
                     img.style.width = '100%';
                     img.style.height = '100%';
                     img.style.objectFit = 'cover';
+                    img.style.borderRadius = '50%';
                     avatarPreview.appendChild(img);
                     
                     btnAvatar.textContent = '✓ Foto selecionada';
                     btnAvatar.style.background = '#27ae60';
+                    console.log('[Settings] Preview atualizado');
                 };
                 reader.readAsDataURL(file);
             });
 
             const handleSave = async () => {
                 const newName = inputName.value.trim();
+                console.log('[Settings] Salvando - Nome:', newName, 'Avatar:', selectedAvatar ? 'sim' : 'não');
 
                 if (!newName && !selectedAvatar) {
                     showError('Digite um nome ou escolha uma foto');
@@ -1084,27 +1129,31 @@ window.LiveModal = (function () {
                     return;
                 }
 
-                if (newName && !/^[a-zA-Z0-9]+$/.test(newName)) {
-                    showError('Nome deve conter apenas letras e números');
+                if (newName && !/^[a-zA-Z0-9 _-]+$/i.test(newName)) {
+                    showError('Nome deve conter apenas letras, números, espaço, _ e -');
                     inputName.focus();
                     return;
                 }
 
                 btnSave.disabled = true;
-                btnSave.textContent = '⏳';
+                btnSave.textContent = '⏳ Salvando...';
 
                 try {
+                    const payload = {
+                        userId: sessionStorage.getItem('liveModalUserId'),
+                        newName: newName || this.userName,
+                        avatar: selectedAvatar
+                    };
+                    console.log('[Settings] Enviando para servidor:', {userId: payload.userId, newName: payload.newName, avatarSize: payload.avatar ? payload.avatar.length : 0});
+
                     const response = await fetch('/api/user/update-profile', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            userId: sessionStorage.getItem('liveModalUserId'),
-                            newName: newName || this.userName,
-                            avatar: selectedAvatar
-                        })
+                        body: JSON.stringify(payload)
                     });
 
                     const data = await response.json();
+                    console.log('[Settings] Resposta:', data);
 
                     if (data.ok) {
                         if (newName) {
@@ -1120,22 +1169,25 @@ window.LiveModal = (function () {
                         if (userDisplay) {
                             let displayHtml = '';
                             if (this.userAvatar) {
-                                displayHtml += `<img src="${this.userAvatar}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">`;
+                                displayHtml += `<img src="${this.userAvatar}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 4px;">`;
                             }
                             displayHtml += `${this.userName}`;
                             userDisplay.innerHTML = displayHtml;
                         }
 
                         console.log('[LiveModal] Perfil atualizado');
-                        menu.remove();
-                        this.renderChat(); // Atualizar chat com novo avatar
+                        setTimeout(() => {
+                            menu.remove();
+                            this.renderChat(); // Atualizar chat com novo avatar
+                        }, 500);
                     } else {
+                        console.error('[Settings] Erro:', data.error);
                         showError(data.error || 'Erro ao atualizar');
                         btnSave.disabled = false;
                         btnSave.textContent = '✓ Salvar';
                     }
                 } catch (error) {
-                    console.error('[LiveModal] Erro:', error);
+                    console.error('[Settings] Erro de conexão:', error);
                     showError('Erro na conexão');
                     btnSave.disabled = false;
                     btnSave.textContent = '✓ Salvar';
@@ -1144,7 +1196,10 @@ window.LiveModal = (function () {
 
             btnSave.addEventListener('click', handleSave);
             inputName.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') handleSave();
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSave();
+                }
             });
 
             // Fechar menu ao clicar fora
@@ -1157,9 +1212,13 @@ window.LiveModal = (function () {
 
             document.addEventListener('click', closeMenuOnClickOutside);
 
-            // Posicionar menu
-            settingsBtn.parentElement.style.position = 'relative';
-            settingsBtn.parentElement.appendChild(menu);
+            // Posicionar menu - adiciona ao body com posição fixa
+            menu.style.position = 'fixed';
+            const btnRect = settingsBtn.getBoundingClientRect();
+            menu.style.top = (btnRect.bottom + 8) + 'px';
+            menu.style.right = (window.innerWidth - btnRect.right) + 'px';
+            menu.style.zIndex = '10001';
+            document.body.appendChild(menu);
             inputName.focus();
         },
 
@@ -1233,22 +1292,13 @@ window.LiveModal = (function () {
             // Limpar input imediatamente
             this.chatInput.value = '';
 
-            // Adicionar localmente para feedback instantâneo
-            const localMsg = {
-                id: Date.now(),
-                ...message
-            };
-            this.messages.push(localMsg);
-            this.renderChat();
-
-            // Auto-scroll
-            setTimeout(() => {
-                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-            }, 0);
-
-            // Salvar no servidor
+            // Salvar no servidor (sem adicionar localmente para evitar duplicatas)
             try {
-                await this.saveChatToServer(message);
+                const response = await this.saveChatToServer(message);
+                // Após salvar no servidor, recarregar chat para sincronizar
+                if (response) {
+                    await this.loadChatFromServer();
+                }
             } catch (error) {
                 console.error('[LiveModal] Erro ao salvar mensagem:', error);
             }
@@ -1673,9 +1723,12 @@ window.LiveModal = (function () {
 
                 if (!response.ok) {
                     console.error('[LiveModal] Erro ao salvar mensagem:', response.status);
+                    return false;
                 }
+                return true;
             } catch (error) {
                 console.error('[LiveModal] Erro de conexão ao salvar mensagem:', error);
+                return false;
             }
         },
 
@@ -1766,9 +1819,6 @@ window.LiveModal = (function () {
                         setTimeout(() => {
                             this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
                         }, 0);
-                    } else if (this.serverProprietario) {
-                        // Se há proprietário no servidor, re-renderizar para atualizar badges
-                        this.renderChat();
                     }
                 } catch (error) {
                     // Silenciosamente ignorar erros

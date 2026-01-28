@@ -233,28 +233,6 @@ window.AuthLogin = (function() {
 
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
-                        <i class="fas fa-user-tie"></i> Nome *
-                    </label>
-                    <input 
-                        type="text" 
-                        id="create-name" 
-                        placeholder="Seu nome completo"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid rgba(255, 255, 255, 0.3);
-                            border-radius: 6px;
-                            background: rgba(255, 255, 255, 0.1);
-                            color: white;
-                            font-size: 14px;
-                            box-sizing: border-box;
-                            font-family: inherit;
-                        "
-                    >
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
                         <i class="fas fa-lock"></i> Senha *
                     </label>
                     <input 
@@ -349,7 +327,6 @@ window.AuthLogin = (function() {
             createOverlay.appendChild(createBox);
 
             const inputId = createBox.querySelector('#create-id');
-            const inputName = createBox.querySelector('#create-name');
             const inputPassword = createBox.querySelector('#create-password');
             const inputConfirmPassword = createBox.querySelector('#create-confirm-password');
             const btnSubmit = createBox.querySelector('#create-submit');
@@ -366,11 +343,10 @@ window.AuthLogin = (function() {
 
             const handleSubmit = async () => {
                 const userId = inputId.value.trim();
-                const name = inputName.value.trim();
                 const password = inputPassword.value.trim();
                 const confirmPassword = inputConfirmPassword.value.trim();
 
-                if (!userId || !name || !password || !confirmPassword) {
+                if (!userId || !password || !confirmPassword) {
                     showError('Todos os campos são obrigatórios');
                     return;
                 }
@@ -405,7 +381,6 @@ window.AuthLogin = (function() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             id: userId,
-                            name: name,
                             password: password
                         })
                     });
@@ -414,9 +389,9 @@ window.AuthLogin = (function() {
 
                     if (data.ok) {
                         // Conta criada com sucesso
-                        module.userName = data.userName || name;
+                        module.userName = userId;
                         module.userId = userId;
-                        module.userEmail = data.email || `${userId}@chat.local`;
+                        module.userEmail = `${userId}@chat.local`;
                         module.authenticated = true;
 
                         sessionStorage.setItem('liveModalUserName', module.userName);
@@ -461,8 +436,9 @@ window.AuthLogin = (function() {
 })();
 
 // Inicializar quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.AuthLogin) {
-        window.AuthLogin.init();
-    }
-});
+// DESABILITADO: O login agora é feito apenas dentro do live modal
+// document.addEventListener('DOMContentLoaded', function() {
+//     if (window.AuthLogin) {
+//         window.AuthLogin.init();
+//     }
+// });

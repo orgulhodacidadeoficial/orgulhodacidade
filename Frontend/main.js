@@ -115,12 +115,61 @@
         });
     }
 
+    // Controle de visibilidade do header ao fazer scroll (apenas desktop)
+    function initHeaderScroll() {
+        // Apenas desktop (>= 769px)
+        if (window.innerWidth < 769) return;
+        
+        let lastScrollY = 0;
+        const header = document.querySelector('.main-header');
+        
+        if (!header) return;
+        
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            
+            // Se está scrollando para baixo, esconde o header
+           // if (currentScrollY > lastScrollY && currentScrollY > 100) {
+              //  header.style.transform = 'translateY(-100%)';
+               // header.style.opacity = '0';
+         //   } else {
+                // Se está scrollando para cima, mostra o header
+             //   header.style.transform = 'translateY(0)';
+              //  header.style.opacity = '1';
+          //  }
+            
+            lastScrollY = currentScrollY;
+        };
+        
+        // Adiciona transição suave ao header
+        header.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        
+        // Reinicializa ao redimensionar a janela
+        window.addEventListener('resize', () => {
+            if (window.innerWidth < 769) {
+                window.removeEventListener('scroll', handleScroll);
+                header.style.transform = 'translateY(0)';
+                header.style.opacity = '1';
+            }
+        });
+    }
+
     // API pública
     window.App = {
         boot,
         notify,
         handleFormSubmit,
         handleContato,
-        handleContratacao
+        handleContratacao,
+        initHeaderScroll
     };
+    
+    // Inicia o comportamento de scroll do header após carregar a página
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHeaderScroll);
+    } else {
+        initHeaderScroll();
+    }
 })();

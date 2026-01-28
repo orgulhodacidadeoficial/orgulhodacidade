@@ -1890,8 +1890,7 @@ p {
 
 /* Seção de Apresentações */
 .apresentacoes {
-    background: rgba(39, 37, 37, 0.95);
-    border-radius: 16px;
+    background: rgba(39, 37, 37, 0.95);    
     padding: 2rem;
     margin: 2rem auto;
     box-shadow: var(--sombra-suave);
@@ -2326,8 +2325,7 @@ p {
     background: linear-gradient(90deg, rgba(7,18,58,0.95) 0%, rgba(15,27,68,0.92) 100%);
     padding: 12px 0;
     box-shadow: 0 6px 18px rgba(4,6,24,0.45);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);    
     border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 
@@ -2337,7 +2335,7 @@ p {
     padding: 0 16px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     box-sizing: border-box;
 }
 
@@ -2362,13 +2360,14 @@ p {
 .nav-links a {
     color: rgba(255,255,255,0.95);
     background: transparent;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: 999px;
     transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     white-space: nowrap;
+    font-size: 0.9rem;
 }
 
 .nav-links a:hover {
@@ -2465,20 +2464,20 @@ body.is-admin .admin-only { display: inline-flex !important; }
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-right: auto;
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 28px;
+  height: 28px;
   background: linear-gradient(135deg, #ff8a00 0%, #e52e71 50%, #6a00ff 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 20px;
+  font-size: 14px;
   box-shadow: 0 4px 15px rgba(229, 46, 113, 0.3);
   transition: all 0.3s ease;
 }
@@ -2489,7 +2488,7 @@ body.is-admin .admin-only { display: inline-flex !important; }
 }
 
 .logo-text {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   background: linear-gradient(90deg, #ff8a00 0%, #e52e71 35%, #6a00ff 70%);
   -webkit-background-clip: text;
@@ -3086,7 +3085,7 @@ body {
     .main-nav {
         /* Header fixo e moderno */
         background: linear-gradient(180deg, #07123a 0%, #0f1b44 100%); /* Mesma cor do footer */
-        padding: 1.0rem 0;
+        padding: 0.4rem 0;
         position: fixed;
         width: 100%;
         top: 0;
@@ -3094,6 +3093,11 @@ body {
         box-shadow: 0 6px 22px rgba(0,0,0,0.16);
         backdrop-filter: saturate(120%) blur(6px);
         border-bottom: 4px solid rgba(255,138,0,0.12);
+    }
+    
+    /* Adiciona padding-top ao main para conteúdo começar abaixo do header */
+    main {
+        margin-top: 48px;
     }
 }
 

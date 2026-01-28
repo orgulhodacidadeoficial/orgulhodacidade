@@ -331,6 +331,7 @@ const wss = new WebSocket.Server({
   perMessageDeflate: false  // Disable compression to avoid frame issues
 });
 const playlistClients = new Set();
+const chatClients = new Map(); // Map para armazenar clientes de chat por videoId
 
 // Log WebSocket server initialization
 console.log('[WebSocket] Inicializando servidor de playlist WebSocket');
@@ -834,15 +835,30 @@ async function findUserByEmail(email) {
   }
 }
 
-async function createUser({ name, email, password }) {
-  const existing = await findUserByEmail(email);
+async function findUserById(id) {
+  if (USE_POSTGRES) {
+    const result = await pgQuery(
+      'SELECT * FROM users WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] || null;
+  } else {
+    const user = await dbGet(
+      'SELECT * FROM users WHERE id = ?',
+      [id]
+    );
+    return user || null;
+  }
+}
+
+async function createUser({ id, password }) {
+  const existing = await findUserById(id);
   if (existing) throw new Error('UserExists');
   const { salt, hash } = hashPassword(password);
-  const userId = crypto.randomBytes(12).toString('hex');
   const user = {
-    id: userId,
-    name: name || 'Usuário',
-    email,
+    id: id,
+    name: id,
+    email: `${id}@chat.local`,
     passwordHash: hash,
     salt,
     createdAt: Date.now(),
@@ -863,8 +879,8 @@ async function createUser({ name, email, password }) {
   return user;
 }
 
-async function verifyUserCredentials(email, password) {
-  const user = await findUserByEmail(email);
+async function verifyUserCredentials(userId, password) {
+  const user = await findUserById(userId);
   if (!user) return null;
   const { hash } = hashPassword(password, user.salt);
   if (hash === user.passwordHash) return user;
@@ -875,14 +891,13 @@ async function verifyUserCredentials(email, password) {
 // --- Auth endpoints: register / login / logout / me ---
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body || {};
-    if (!email || !password) return res.status(400).json({ error: 'Email e senha são obrigatórios' });
-    const normalizedEmail = String(email).toLowerCase();
+    const { id, password } = req.body || {};
+    if (!id || !password) return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
     try {
-      const user = await createUser({ name, email: normalizedEmail, password });
+      const user = await createUser({ id, password });
       // create session
       req.session.userId = user.id;
-      return res.json({ ok: true, user: { id: user.id, name: user.name, email: user.email } });
+      return res.json({ ok: true, user: { id: user.id, name: user.id, email: `${user.id}@chat.local` }, userName: user.id });
     } catch (err) {
       if (err && err.message === 'UserExists') return res.status(409).json({ error: 'Usuário já existe' });
       console.error('register error', err);
@@ -896,9 +911,9 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body || {};
-    if (!email || !password) return res.status(400).json({ error: 'Email e senha são obrigatórios' });
-    const user = await verifyUserCredentials(email, password);
+    const { username, password } = req.body || {};
+    if (!username || !password) return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
+    const user = await verifyUserCredentials(username, password);
     if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
     req.session.userId = user.id;
     
@@ -907,10 +922,12 @@ app.post('/api/auth/login', async (req, res) => {
     
     return res.json({ 
       ok: true, 
+      userName: user.id,
+      id: user.id,
       user: { 
         id: user.id, 
-        name: user.name, 
-        email: user.email,
+        name: user.id, 
+        email: `${user.id}@chat.local`,
         avatar: chatPreferences.avatar,
         color: chatPreferences.color,
         font: chatPreferences.font,
@@ -1399,6 +1416,42 @@ chatWss.on('connection', (ws, req) => {
   });
 });
 */
+
+// ===== USER PROFILE ENDPOINT =====
+app.post('/api/user/update-profile', express.json({ limit: '10mb' }), async (req, res) => {
+  try {
+    const { userId, newName, avatar } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId é obrigatório' });
+    }
+
+    if (!newName && !avatar) {
+      return res.status(400).json({ error: 'Envie pelo menos um dado para atualizar' });
+    }
+
+    console.log(`[User] Atualizando perfil: ${userId}, nome: ${newName ? 'sim' : 'não'}, avatar: ${avatar ? 'sim' : 'não'}`);
+
+    // Para este projeto, armazenaremos o nome e avatar no sessionStorage/localStorage do cliente
+    // Se precisar persistir no servidor, você pode adicionar uma tabela de perfis no banco
+    
+    // Por enquanto, apenas retornamos sucesso
+    // O cliente mantém os dados em sessionStorage
+    
+    return res.json({ 
+      ok: true, 
+      message: 'Perfil atualizado com sucesso',
+      data: {
+        userId,
+        name: newName,
+        avatarSize: avatar ? avatar.length : 0
+      }
+    });
+  } catch (err) {
+    console.error('[User] Erro ao atualizar perfil:', err);
+    return res.status(500).json({ error: 'Erro ao atualizar perfil' });
+  }
+});
 
 // ===== CHAT ENDPOINTS =====
 
