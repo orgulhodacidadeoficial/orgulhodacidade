@@ -735,11 +735,7 @@ window.LiveModal = (function () {
                         return;
                     }
 
-                    if (!/^[a-zA-Z0-9]+$/.test(username)) {
-                        showError('Nome deve conter apenas letras e números');
-                        inputId.focus();
-                        return;
-                    }
+                    // Validação de username removida - permite qualquer caractere
 
                     if (!password) {
                         showError('Por favor, digite sua senha');
@@ -1347,11 +1343,7 @@ window.LiveModal = (function () {
                     return;
                 }
 
-                if (newName && !/^[a-zA-Z0-9 _-]+$/i.test(newName)) {
-                    showError('Nome deve conter apenas letras, números, espaço, _ e -');
-                    inputName.focus();
-                    return;
-                }
+                // Validação de nome removida - permite qualquer caractere
 
                 btnSave.disabled = true;
                 btnSave.textContent = '⏳ Salvando...';
