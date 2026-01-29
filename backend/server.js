@@ -28,10 +28,7 @@ if (USE_POSTGRES) {
   });
   
   console.log('✅ Usando PostgreSQL para persistência de dados');
-  // Initialize tables asynchronously
-  initializePgTables().catch(err => {
-    console.error('Erro crítico ao inicializar tabelas PostgreSQL:', err);
-  });
+  // Initialize tables asynchronously - serão inicializadas em ensureStorageFiles()
 } else {
   // SQLite database initialization
   const DB_PATH = path.join(__dirname, '..', 'data', 'app.db');
@@ -804,11 +801,12 @@ async function writeJson(tableName, arr) {
 
 // Ensure storage tables exist on startup (chamado em initializeTables)
 async function ensureStorageFiles() {
-  // Já feito em initializeTables()
   if (USE_POSTGRES) {
-    console.log('Storage tables já inicializados via PostgreSQL');
+    console.log('Inicializando tabelas PostgreSQL...');
+    await initializePgTables();
+    console.log('✅ Storage tables inicializados via PostgreSQL');
   } else {
-    console.log('Storage tables já inicializados via SQLite');
+    console.log('✅ Storage tables já inicializados via SQLite');
   }
 }
 
