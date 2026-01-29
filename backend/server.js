@@ -874,9 +874,14 @@ async function findUserById(id) {
 }
 
 async function createUser({ id, password }) {
+  console.log('[AUTH] Criando novo usuário:', id);
   const existing = await findUserById(id);
-  if (existing) throw new Error('UserExists');
+  if (existing) {
+    console.log('[AUTH] Usuário já existe:', id);
+    throw new Error('UserExists');
+  }
   const { salt, hash } = hashPassword(password);
+  console.log('[AUTH] Senha hasheada | Salt:', salt.substring(0, 10), '| Hash:', hash.substring(0, 20));
   const user = {
     id: id,
     name: id,
@@ -891,21 +896,33 @@ async function createUser({ id, password }) {
       `INSERT INTO users (id, name, email, passwordHash, salt, createdAt) VALUES ($1, $2, $3, $4, $5, $6)`,
       [user.id, user.name, user.email, user.passwordHash, user.salt, user.createdAt]
     );
+    console.log('[AUTH] ✅ Usuário salvo no PostgreSQL:', user.id);
   } else {
     await dbRun(
       `INSERT INTO users (id, name, email, passwordHash, salt, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
       [user.id, user.name, user.email, user.passwordHash, user.salt, user.createdAt]
     );
+    console.log('[AUTH] ✅ Usuário salvo no SQLite:', user.id);
   }
   
   return user;
 }
 
 async function verifyUserCredentials(userId, password) {
+  console.log('[AUTH] Verificando credenciais para:', userId);
   const user = await findUserById(userId);
-  if (!user) return null;
+  if (!user) {
+    console.log('[AUTH] Usuário não encontrado:', userId);
+    return null;
+  }
+  console.log('[AUTH] Usuário encontrado:', user.id, '| Salt:', user.salt?.substring(0, 10));
   const { hash } = hashPassword(password, user.salt);
-  if (hash === user.passwordHash) return user;
+  console.log('[AUTH] Hash calculado:', hash.substring(0, 20), '| Hash armazenado:', user.passwordHash.substring(0, 20));
+  if (hash === user.passwordHash) {
+    console.log('[AUTH] ✅ Senha correta!');
+    return user;
+  }
+  console.log('[AUTH] ❌ Senha incorreta!');
   return null;
 }
 
