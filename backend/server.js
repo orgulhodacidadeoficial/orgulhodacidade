@@ -915,7 +915,15 @@ async function verifyUserCredentials(userId, password) {
     console.log('[AUTH] Usuário não encontrado:', userId);
     return null;
   }
-  console.log('[AUTH] Usuário encontrado:', user.id, '| Salt:', user.salt?.substring(0, 10));
+  console.log('[AUTH] Usuário encontrado:', user.id);
+  console.log('[AUTH] Salt exists:', !!user.salt, 'PasswordHash exists:', !!user.passwordHash);
+  
+  if (!user.salt || !user.passwordHash) {
+    console.error('[AUTH] ❌ Dados de autenticação incompletos! Salt:', !!user.salt, 'Hash:', !!user.passwordHash);
+    console.log('[AUTH] Dados do usuário:', JSON.stringify(user));
+    return null;
+  }
+  
   const { hash } = hashPassword(password, user.salt);
   console.log('[AUTH] Hash calculado:', hash.substring(0, 20), '| Hash armazenado:', user.passwordHash.substring(0, 20));
   if (hash === user.passwordHash) {
@@ -931,9 +939,11 @@ async function verifyUserCredentials(userId, password) {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { id, password } = req.body || {};
+    console.log('[AUTH REGISTER] Requisição para registrar:', id);
     if (!id || !password) return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
     try {
       const user = await createUser({ id, password });
+      console.log('[AUTH REGISTER] ✅ Usuário criado:', user.id, '| Salt salvo:', !!user.salt, '| Hash salvo:', !!user.passwordHash);
       // create session
       req.session.userId = user.id;
       return res.json({ ok: true, user: { id: user.id, name: user.id, email: `${user.id}@chat.local` }, userName: user.id });
