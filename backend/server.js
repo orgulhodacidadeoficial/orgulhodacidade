@@ -373,15 +373,13 @@ async function migrateChatMessagesTablePg() {
       await pgQuery(`ALTER TABLE chat_messages ADD COLUMN email TEXT`);
     }
     if (!columnNames.includes('role')) {
-      console.log('[MIGRATE] Adicionando coluna role à tabela chat_messages');
-      await dbRun(`ALTER TABLE chat_messages ADD COLUMN role TEXT DEFAULT 'USUARIO'`);
+      console.log('[MIGRATE PG] Adicionando coluna role à tabela chat_messages');
+      await pgQuery(`ALTER TABLE chat_messages ADD COLUMN role TEXT DEFAULT 'USUARIO'`);
     }
     if (!columnNames.includes('avatar')) {
-      console.log('[MIGRATE] Adicionando coluna avatar à tabela chat_messages');
-      await dbRun(`ALTER TABLE chat_messages ADD COLUMN avatar TEXT`);
+      console.log('[MIGRATE PG] Adicionando coluna avatar à tabela chat_messages');
+      await pgQuery(`ALTER TABLE chat_messages ADD COLUMN avatar TEXT`);
     }
-    console.log('[MIGRATE] ✅ chat_messages atualizada com sucesso');
-    
     console.log('[MIGRATE PG] ✅ chat_messages atualizada com sucesso');
   } catch (err) {
     console.error('[MIGRATE PG] Erro ao migrar chat_messages:', err);
