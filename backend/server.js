@@ -220,7 +220,7 @@ async function initializePgTables() {
       CREATE TABLE IF NOT EXISTS chat_messages (
         id SERIAL PRIMARY KEY,
         videoId TEXT NOT NULL,
-        user TEXT NOT NULL,
+        "user" TEXT NOT NULL,
         email TEXT,
         role TEXT,
         text TEXT NOT NULL,
@@ -1502,7 +1502,7 @@ app.post('/api/chat', async (req, res) => {
       try {
         // Tentar inserir SEM email e role (mais compatível)
         const result = await pgQuery(
-          `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
+          `INSERT INTO chat_messages (videoId, "user", text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
           [videoId, cleanUser, cleanText, timestamp]
         );
         
@@ -1534,7 +1534,7 @@ app.post('/api/chat', async (req, res) => {
         // Se falhar, tentar COM email e role
         try {
           const result = await pgQuery(
-            `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+            `INSERT INTO chat_messages (videoId, "user", email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
             [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
           );
           
@@ -1638,7 +1638,7 @@ app.get('/api/chat', async (req, res) => {
     if (USE_POSTGRES) {
       try {
         const result = await pgQuery(
-          `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
+          `SELECT id, videoId, "user", email, role, text, timestamp, createdAt 
            FROM chat_messages 
            WHERE videoId = $1 
            ORDER BY createdAt ASC 
@@ -1650,7 +1650,7 @@ app.get('/api/chat', async (req, res) => {
         console.warn('[CHAT GET] PostgreSQL error, trying without email/role:', err.message);
         try {
           const result = await pgQuery(
-            `SELECT id, videoId, user, text, timestamp, createdAt 
+            `SELECT id, videoId, "user", text, timestamp, createdAt 
              FROM chat_messages 
              WHERE videoId = $1 
              ORDER BY createdAt ASC 
