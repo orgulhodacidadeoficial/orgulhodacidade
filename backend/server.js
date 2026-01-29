@@ -132,11 +132,11 @@ async function initializeTables() {
         id TEXT PRIMARY KEY,
         name TEXT,
         email TEXT UNIQUE,
-        passwordHash TEXT,
+        "passwordHash" TEXT,
         salt TEXT,
-        isAdmin INTEGER DEFAULT 0,
-        isPresident INTEGER DEFAULT 0,
-        createdAt INTEGER
+        "isAdmin" INTEGER DEFAULT 0,
+        "isPresident" INTEGER DEFAULT 0,
+        "createdAt" INTEGER
       )
     `);
     
@@ -258,11 +258,11 @@ async function initializePgTables() {
         id TEXT PRIMARY KEY,
         name TEXT,
         email TEXT UNIQUE,
-        passwordHash TEXT,
+        "passwordHash" TEXT,
         salt TEXT,
-        isAdmin INTEGER DEFAULT 0,
-        isPresident INTEGER DEFAULT 0,
-        createdAt BIGINT
+        "isAdmin" INTEGER DEFAULT 0,
+        "isPresident" INTEGER DEFAULT 0,
+        "createdAt" BIGINT
       )
     `);
     
@@ -893,13 +893,13 @@ async function createUser({ id, password }) {
   
   if (USE_POSTGRES) {
     await pgQuery(
-      `INSERT INTO users (id, name, email, passwordHash, salt, createdAt) VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO users (id, name, email, "passwordHash", salt, "createdAt") VALUES ($1, $2, $3, $4, $5, $6)`,
       [user.id, user.name, user.email, user.passwordHash, user.salt, user.createdAt]
     );
     console.log('[AUTH] ✅ Usuário salvo no PostgreSQL:', user.id);
   } else {
     await dbRun(
-      `INSERT INTO users (id, name, email, passwordHash, salt, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO users (id, name, email, "passwordHash", salt, "createdAt") VALUES (?, ?, ?, ?, ?, ?)`,
       [user.id, user.name, user.email, user.passwordHash, user.salt, user.createdAt]
     );
     console.log('[AUTH] ✅ Usuário salvo no SQLite:', user.id);
