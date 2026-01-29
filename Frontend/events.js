@@ -849,17 +849,38 @@
 
       // Mantém o botão visível e vincula ação
       botaoElement.style.display = 'inline-flex';
-      botaoElement.addEventListener('click', function (e) {
+      
+      // Remover listeners antigos para evitar duplicação
+      const newBtn = botaoElement.cloneNode(true);
+      botaoElement.replaceWith(newBtn);
+      
+      newBtn.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        // Abrir o livemodal em vez de window.open
-        if (window.LiveModal && typeof window.LiveModal.open === 'function') {
-          const eventoTitle = evento ? evento.nome : 'Transmissão ao vivo';
-          window.LiveModal.open(youtubeUrl, eventoTitle);
-        } else {
-          console.warn('LiveModal não está disponível, abrindo em nova aba');
-          window.open(youtubeUrl, '_blank');
-        }
+        console.log('[Events] Clicou em Assistir ao Vivo:', youtubeUrl);
+        console.log('[Events] window.LiveModal disponível?', !!window.LiveModal);
+        
+        // Função para abrir o modal com retry
+        const abrirModal = (tentativa = 0) => {
+          if (window.LiveModal && typeof window.LiveModal.open === 'function') {
+            const eventoTitle = evento ? evento.nome : 'Transmissão ao vivo';
+            console.log('[Events] ✅ Abrindo LiveModal:', {url: youtubeUrl.substring(0, 50), title: eventoTitle});
+            try {
+              window.LiveModal.open(youtubeUrl, eventoTitle);
+            } catch (err) {
+              console.error('[Events] Erro ao abrir modal:', err);
+            }
+          } else if (tentativa < 10) {
+            console.log(`[Events] LiveModal não pronto (tentativa ${tentativa}/10), aguardando...`);
+            setTimeout(() => abrirModal(tentativa + 1), 200);
+          } else {
+            console.error('[Events] LiveModal não encontrado após 10 tentativas');
+            console.log('[Events] window.LiveModal:', window.LiveModal);
+          }
+        };
+        
+        // Tentar abrir
+        abrirModal();
       });
     } catch (error) {
       console.error('Erro ao verificar status do YouTube:', error);

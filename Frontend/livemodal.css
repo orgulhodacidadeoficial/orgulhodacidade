@@ -77,15 +77,59 @@
 }
 
 .live-modal-title {
-    font-size: 28px;
-    font-weight: 800;
+    font-size: 34px;
+    font-weight: 900;
     margin: 0;
     text-align: center;
     flex: 1;
-    letter-spacing: 0.8px;
-    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
-    word-break: break-word;
-    font-family: 'Poppins', sans-serif;
+    letter-spacing: 0.6px;
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    /* Gradient text with clipped background */
+    background: linear-gradient(90deg, #ffffff 0%, #ffd66b 30%, #ff6b6b 60%, #9b7cff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+    position: relative;
+    padding: 6px 12px;
+    transition: transform 220ms cubic-bezier(.2,.9,.2,1), filter 220ms ease;
+}
+
+.live-modal-title:hover {
+    transform: translateY(-3px) scale(1.02);
+    filter: drop-shadow(0 10px 30px rgba(155, 124, 255, 0.18));
+}
+
+/* Decorative animated underline */
+.live-modal-title::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -10px;
+    width: 56%;
+    height: 6px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, rgba(255,107,107,0.95), rgba(255,214,107,0.95), rgba(155,124,255,0.95));
+    box-shadow: 0 6px 18px rgba(155,124,255,0.14);
+    opacity: 0.95;
+    transition: transform 300ms ease, opacity 300ms ease, width 300ms ease;
+}
+
+.live-modal-title:hover::after {
+    transform: translateX(-50%) scaleX(1.03);
+    opacity: 1;
+    width: 64%;
+}
+
+/* Smaller on narrow screens */
+@media (max-width: 720px) {
+    .live-modal-title {
+        font-size: 22px;
+        padding: 4px 8px;
+    }
+    .live-modal-title::after { bottom: -8px; height: 5px; }
 }
 
 .live-modal-user-display {

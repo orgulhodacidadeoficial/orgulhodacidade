@@ -168,11 +168,17 @@ window.LiveModal = (function () {
          * Carrega dados do usuário do storage
          */
         loadUserData() {
-            this.userName = sessionStorage.getItem('liveModalUserName') || null;
-            this.userEmail = sessionStorage.getItem('liveModalUserEmail') || null;
-            this.userAvatar = sessionStorage.getItem('liveModalUserAvatar') || null;
-            this.proprietarioName = sessionStorage.getItem('liveModalProprietarioName') || null; // Carregar proprietário
+            this.userName = sessionStorage.getItem('liveModalUserName') || localStorage.getItem('liveModalUserName') || null;
+            this.userEmail = sessionStorage.getItem('liveModalUserEmail') || localStorage.getItem('liveModalUserEmail') || null;
+            this.userAvatar = sessionStorage.getItem('liveModalUserAvatar') || localStorage.getItem('liveModalUserAvatar') || null;
+            this.proprietarioName = sessionStorage.getItem('liveModalProprietarioName') || localStorage.getItem('liveModalProprietarioName') || null; // Carregar proprietário
             this.authenticated = !!(this.userName && this.userEmail);
+            
+            console.log('[LiveModal] loadUserData:', {
+                userName: this.userName,
+                hasAvatar: !!this.userAvatar,
+                avatarLength: this.userAvatar ? this.userAvatar.length : 0
+            });
             
             // Carregar lista de ADMs do servidor
             this.loadAdmListFromServer();
@@ -190,13 +196,10 @@ window.LiveModal = (function () {
                     const data = await response.json();
                     if (Array.isArray(data.admins)) {
                         sessionStorage.setItem('liveModalAdmList', JSON.stringify(data.admins));
-                        console.log(`[ADMINS LOADED] ${data.admins.length} ADMs carregados do servidor`);
                     }
-                } else {
-                    console.warn('[ADMINS LOADED] Erro ao carregar lista de ADMs do servidor');
                 }
             } catch (err) {
-                console.error('[ADMINS LOADED] Erro ao conectar com servidor:', err);
+                // Erro ao conectar - falha silenciosa
             }
         },
 
@@ -324,6 +327,9 @@ window.LiveModal = (function () {
                 }
             }
 
+            // Recarregar dados do usuário (importante para manter avatar e nome sincronizados)
+            this.loadUserData();
+
             // Extrair video ID
             const videoId = this.extractVideoId(youtubeUrl);
             if (!videoId) {
@@ -338,10 +344,19 @@ window.LiveModal = (function () {
             const titleEl = this.container.querySelector('.live-modal-title');
             if (titleEl) titleEl.textContent = title;
 
-            // Atualizar info do usuário no header
+            // Atualizar info do usuário no header (com avatar se disponível)
             const userDisplay = this.container.querySelector('.live-modal-user-display');
             if (userDisplay) {
-                userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> <strong>${this.escapeHtml(this.userName)}</strong>`;
+                let displayHtml = '';
+                if (this.userAvatar && this.userAvatar.length > 0) {
+                    displayHtml += `<img src="${this.userAvatar}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #fff;">`;
+                    console.log('[LiveModal] Avatar carregado no header');
+                } else {
+                    displayHtml += `<i class="fas fa-user-circle"></i>`;
+                    console.log('[LiveModal] Avatar não disponível, usando ícone');
+                }
+                displayHtml += ` <strong>${this.escapeHtml(this.userName)}</strong>`;
+                userDisplay.innerHTML = displayHtml;
             }
 
             // Mostrar overlay
@@ -614,10 +629,13 @@ window.LiveModal = (function () {
                             this.userEmail = data.email || `${username}@chat.local`;
                             this.authenticated = true;
 
-                            // Salvar dados localmente
+                            // Salvar dados localmente (em session e localStorage para persistência)
                             sessionStorage.setItem('liveModalUserName', this.userName);
                             sessionStorage.setItem('liveModalUserEmail', this.userEmail);
                             sessionStorage.setItem('liveModalUserId', data.id);
+                            localStorage.setItem('liveModalUserName', this.userName);
+                            localStorage.setItem('liveModalUserEmail', this.userEmail);
+                            localStorage.setItem('liveModalUserId', data.id);
 
                             // Recarregar dados para garantir que authenticated está true
                             this.loadUserData();
@@ -924,6 +942,9 @@ window.LiveModal = (function () {
                             sessionStorage.setItem('liveModalUserName', this.userName);
                             sessionStorage.setItem('liveModalUserEmail', this.userEmail);
                             sessionStorage.setItem('liveModalUserId', data.id);
+                            localStorage.setItem('liveModalUserName', this.userName);
+                            localStorage.setItem('liveModalUserEmail', this.userEmail);
+                            localStorage.setItem('liveModalUserId', data.id);
 
                             // Recarregar dados para garantir que authenticated está true
                             this.loadUserData();
@@ -1100,22 +1121,68 @@ window.LiveModal = (function () {
                     showError('Erro ao carregar foto');
                 };
                 reader.onload = (event) => {
-                    selectedAvatar = event.target.result;
-                    console.log('[Settings] Base64 gerado, tamanho:', selectedAvatar.length);
-                    
-                    // Atualizar preview
-                    avatarPreview.innerHTML = '';
-                    const img = document.createElement('img');
-                    img.src = selectedAvatar;
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    img.style.borderRadius = '50%';
-                    avatarPreview.appendChild(img);
-                    
-                    btnAvatar.textContent = '✓ Foto selecionada';
-                    btnAvatar.style.background = '#27ae60';
-                    console.log('[Settings] Preview atualizado');
+                    const originalDataUrl = event.target.result;
+                    // Resize image client-side to max 128px (keeps aspect ratio) to reduce base64 size
+                    const resizeMax = 128;
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            let w = img.width;
+                            let h = img.height;
+                            if (w > resizeMax || h > resizeMax) {
+                                if (w > h) {
+                                    h = Math.round((resizeMax / w) * h);
+                                    w = resizeMax;
+                                } else {
+                                    w = Math.round((resizeMax / h) * w);
+                                    h = resizeMax;
+                                }
+                            }
+                            canvas.width = w;
+                            canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx.clearRect(0, 0, w, h);
+                            ctx.drawImage(img, 0, 0, w, h);
+                            // Prefer JPEG for smaller size if original was not PNG with transparency
+                            const isPng = file.type === 'image/png';
+                            const quality = 0.8;
+                            selectedAvatar = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', quality);
+                        } catch (e) {
+                            console.warn('[Settings] Resize falhou, usando original:', e);
+                            selectedAvatar = originalDataUrl;
+                        }
+
+                        console.log('[Settings] Base64 (resized) gerado, tamanho:', selectedAvatar.length);
+                        // Atualizar preview
+                        avatarPreview.innerHTML = '';
+                        const pimg = document.createElement('img');
+                        pimg.src = selectedAvatar;
+                        pimg.style.width = '100%';
+                        pimg.style.height = '100%';
+                        pimg.style.objectFit = 'cover';
+                        pimg.style.borderRadius = '50%';
+                        avatarPreview.appendChild(pimg);
+
+                        btnAvatar.textContent = '✓ Foto selecionada';
+                        btnAvatar.style.background = '#27ae60';
+                        console.log('[Settings] Preview atualizado (resized)');
+                    };
+                    img.onerror = (err) => {
+                        console.error('[Settings] Erro ao carregar imagem para resize:', err);
+                        selectedAvatar = originalDataUrl;
+                        avatarPreview.innerHTML = '';
+                        const pimg = document.createElement('img');
+                        pimg.src = selectedAvatar;
+                        pimg.style.width = '100%';
+                        pimg.style.height = '100%';
+                        pimg.style.objectFit = 'cover';
+                        pimg.style.borderRadius = '50%';
+                        avatarPreview.appendChild(pimg);
+                        btnAvatar.textContent = '✓ Foto selecionada';
+                        btnAvatar.style.background = '#27ae60';
+                    };
+                    img.src = originalDataUrl;
                 };
                 reader.readAsDataURL(file);
             });
@@ -1165,10 +1232,16 @@ window.LiveModal = (function () {
                         if (newName) {
                             this.userName = newName;
                             sessionStorage.setItem('liveModalUserName', newName);
+                            localStorage.setItem('liveModalUserName', newName);
                         }
                         if (selectedAvatar) {
                             this.userAvatar = selectedAvatar;
                             sessionStorage.setItem('liveModalUserAvatar', selectedAvatar);
+                            localStorage.setItem('liveModalUserAvatar', selectedAvatar);
+                            console.log('[Settings] Avatar salvo:', {
+                                tamanho: selectedAvatar.length,
+                                tipo: selectedAvatar.substring(0, 50)
+                            });
                         }
                         
                         const userDisplay = document.querySelector('.live-modal-user-display');
@@ -1275,6 +1348,13 @@ window.LiveModal = (function () {
                 return;
             }
 
+            // Recarregar avatar do storage antes de enviar
+            this.userAvatar = sessionStorage.getItem('liveModalUserAvatar') || localStorage.getItem('liveModalUserAvatar') || this.userAvatar;
+            console.log('[LiveModal] Avatar antes de enviar:', {
+                length: this.userAvatar ? this.userAvatar.length : 0,
+                hasValue: !!this.userAvatar
+            });
+
             // Verificar se é comando
             if (text.startsWith('/')) {
                 this.handleCommand(text);
@@ -1294,6 +1374,12 @@ window.LiveModal = (function () {
                     minute: '2-digit' 
                 })
             };
+
+            console.log('[LiveModal] Enviando mensagem:', {
+                user: this.userName,
+                avatarLength: this.userAvatar ? this.userAvatar.length : 0,
+                hasAvatar: !!this.userAvatar
+            });
 
             // Limpar input imediatamente
             this.chatInput.value = '';
@@ -1639,7 +1725,11 @@ window.LiveModal = (function () {
                 return;
             }
 
-            this.chatMessages.innerHTML = this.messages.map(msg => {
+            // Debug: verificar avatares nas mensagens
+            const avatarCount = this.messages.filter(m => m.avatar && m.avatar.length > 0).length;
+            console.log(`[LiveModal] Renderizando ${this.messages.length} mensagens - ${avatarCount} com avatar`);
+
+            this.chatMessages.innerHTML = this.messages.map((msg, idx) => {
                 // Verifica se é uma notificação do sistema
                 if (msg.role === 'SISTEMA' || msg.user === 'SISTEMA') {
                     return `
@@ -1651,6 +1741,10 @@ window.LiveModal = (function () {
                             <div class="live-modal-chat-text" style="color: #9C27B0; font-weight: 500;">${this.escapeHtml(msg.text)}</div>
                         </div>
                     `;
+                }
+
+                if (idx === 0) {
+                    console.log('[LiveModal] Primeira mensagem:', {user: msg.user, hasAvatar: !!msg.avatar, avatarLength: msg.avatar ? msg.avatar.length : 0});
                 }
 
                 const isMine = msg.email === this.userEmail;
@@ -1690,7 +1784,8 @@ window.LiveModal = (function () {
                 let roleIcon = '';
                 let roleBadge = '';
                 let textShadow = `0 0 10px ${roleColor}`;
-                
+
+                // Ajusta cor/ícone de role antes de renderizar avatar (usa cor correta na borda)
                 if (role === 'PROPRIETARIO') {
                     roleColor = '#ff6b6b';
                     roleIcon = '👑';
@@ -1702,12 +1797,30 @@ window.LiveModal = (function () {
                     roleBadge = '';
                     textShadow = '0 0 10px #ffd700';
                 }
+
+                // Avatar da imagem de configurações — prioriza avatar da mensagem,
+                // se não existir usa o avatar configurado do usuário ao enviar (mensagens próprias),
+                // caso contrário mostra o placeholder circular.
+                let avatarImg = '';
+                if (msg.avatar && msg.avatar.length > 0) {
+                    avatarImg = `<img src="${msg.avatar}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid ${roleColor};" alt="${msg.user}" title="${msg.user}">`;
+                } else if (isMine && this.userAvatar) {
+                    // Usa avatar configurado nas settings para as próprias mensagens
+                    avatarImg = `<img src="${this.userAvatar}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid ${roleColor};" alt="${this.userName}" title="${this.userName}">`;
+                } else {
+                    // Círculo vazio se não tiver avatar
+                    avatarImg = `<div style="width: 40px; height: 40px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0; border: 2px solid ${roleColor};"></div>`;
+                }
                 
                 return `
-                    <div class="live-modal-chat-message" style="border-left-color: ${isMine ? '#ff9800' : '#0b5cff'}; opacity: ${isMine ? '1' : '0.95'}; display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 6px;">
-                        ${msg.avatar ? `<img src="${msg.avatar}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">` : '<div style="width: 36px; height: 36px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0;"></div>'}
-                        <span class="live-modal-chat-user" style="color: ${roleColor}; text-shadow: ${textShadow}; font-weight: bold; white-space: nowrap;">${roleIcon} ${this.escapeHtml(msg.user)}</span>
-                        <div class="live-modal-chat-text" style="color: #fff; font-size: 14px;">${this.escapeHtml(msg.text)}</div>
+                    <div class="live-modal-chat-message" style="border-left-color: ${isMine ? '#ff9800' : '#0b5cff'}; opacity: ${isMine ? '1' : '0.95'}; display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 6px;">
+                        ${avatarImg}
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <span class="live-modal-chat-user" style="color: ${roleColor}; text-shadow: ${textShadow}; font-weight: bold; white-space: nowrap;">${roleIcon} ${this.escapeHtml(msg.user)}</span>
+                            </div>
+                            <div class="live-modal-chat-text" style="color: #fff; font-size: 14px; word-wrap: break-word; word-break: break-word;">${this.escapeHtml(msg.text)}</div>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -1760,9 +1873,9 @@ window.LiveModal = (function () {
                             minute: '2-digit' 
                         })
                     }));
+                    console.log(`[LiveModal] ${this.messages.length} mensagens carregadas - ${this.messages.filter(m => m.avatar).length} com avatar`);
                     this.renderChat();
                     this.lastSyncTime = Date.now();
-                    console.log(`[LiveModal] Carregadas ${this.messages.length} mensagens`);
                 }
             } catch (error) {
                 console.log('[LiveModal] Usando chat local (sem sincronização)');
@@ -1790,13 +1903,12 @@ window.LiveModal = (function () {
                         const propResp = await fetch(propUrl);
                         if (propResp.ok) {
                             const propData = await propResp.json();
-                            console.log(`[DEBUG] Proprietário do servidor:`, propData);
                             if (propData.name) {
                                 this.serverProprietario = propData.name;
                             }
                         }
                     } catch (e) {
-                        console.error(`[DEBUG] Erro ao sincronizar proprietário:`, e);
+                        // Erro silencioso ao sincronizar proprietário
                     }
                     
                     const response = await fetch(`/api/chat?videoId=${encodeURIComponent(this.currentVideoId)}&limit=100`);

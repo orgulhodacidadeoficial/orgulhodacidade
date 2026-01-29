@@ -173,6 +173,7 @@ async function initializeTables() {
         role TEXT,
         text TEXT NOT NULL,
         timestamp TEXT,
+        avatar TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -189,26 +190,35 @@ async function initializeTables() {
 // Migração para chat_messages - Adiciona colunas faltando se necessário
 async function migrateChatMessagesTable() {
   try {
-    // Verificar se as colunas existem
-    const tableInfo = await dbAll(`PRAGMA table_info(chat_messages)`);
-    const columnNames = tableInfo.map(col => col.name);
-    
+    if (USE_POSTGRES) {
+      // If using Postgres, delegate to the PG-specific migration
+      return await migrateChatMessagesTablePg();
+    }
+
+    // SQLite migration: use PRAGMA to inspect columns
+    const infoRows = await dbAll(`PRAGMA table_info(chat_messages)`);
+    const columnNames = (infoRows || []).map(r => r.name);
+
     if (!columnNames.includes('email')) {
-      console.log('[MIGRATE] Adicionando coluna email à tabela chat_messages');
+      console.log('[MIGRATE] Adicionando coluna email à tabela chat_messages (SQLite)');
       await dbRun(`ALTER TABLE chat_messages ADD COLUMN email TEXT`);
     }
-    
+
     if (!columnNames.includes('role')) {
-      console.log('[MIGRATE] Adicionando coluna role à tabela chat_messages');
+      console.log('[MIGRATE] Adicionando coluna role à tabela chat_messages (SQLite)');
       await dbRun(`ALTER TABLE chat_messages ADD COLUMN role TEXT DEFAULT 'USUARIO'`);
     }
-    
-    console.log('[MIGRATE] ✅ chat_messages atualizada com sucesso');
+
+    if (!columnNames.includes('avatar')) {
+      console.log('[MIGRATE] Adicionando coluna avatar à tabela chat_messages (SQLite)');
+      await dbRun(`ALTER TABLE chat_messages ADD COLUMN avatar TEXT`);
+    }
+
+    console.log('[MIGRATE] ✅ chat_messages (SQLite) atualizada com sucesso');
   } catch (err) {
     console.error('[MIGRATE] Erro ao migrar chat_messages:', err);
   }
 }
-
 // PostgreSQL Initialize Tables
 async function initializePgTables() {
   try {
@@ -224,6 +234,7 @@ async function initializePgTables() {
         email TEXT,
         role TEXT,
         text TEXT NOT NULL,
+        avatar TEXT,
         timestamp TEXT,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -361,11 +372,15 @@ async function migrateChatMessagesTablePg() {
       console.log('[MIGRATE PG] Adicionando coluna email à tabela chat_messages');
       await pgQuery(`ALTER TABLE chat_messages ADD COLUMN email TEXT`);
     }
-    
     if (!columnNames.includes('role')) {
-      console.log('[MIGRATE PG] Adicionando coluna role à tabela chat_messages');
-      await pgQuery(`ALTER TABLE chat_messages ADD COLUMN role TEXT DEFAULT 'USUARIO'`);
+      console.log('[MIGRATE] Adicionando coluna role à tabela chat_messages');
+      await dbRun(`ALTER TABLE chat_messages ADD COLUMN role TEXT DEFAULT 'USUARIO'`);
     }
+    if (!columnNames.includes('avatar')) {
+      console.log('[MIGRATE] Adicionando coluna avatar à tabela chat_messages');
+      await dbRun(`ALTER TABLE chat_messages ADD COLUMN avatar TEXT`);
+    }
+    console.log('[MIGRATE] ✅ chat_messages atualizada com sucesso');
     
     console.log('[MIGRATE PG] ✅ chat_messages atualizada com sucesso');
   } catch (err) {
@@ -1572,7 +1587,7 @@ app.post('/api/user/update-profile', express.json({ limit: '10mb' }), async (req
 app.post('/api/chat', async (req, res) => {
   try {
     console.log('[CHAT POST] Recebido:', req.body);
-    const { videoId, user, email, role, text, timestamp } = req.body;
+    const { videoId, user, email, role, text, timestamp, avatar } = req.body;
     
     // Validações básicas
     if (!videoId || !user || !text) {
@@ -1585,6 +1600,7 @@ app.post('/api/chat', async (req, res) => {
     const cleanUser = user.substring(0, 100);
     const cleanEmail = email ? email.substring(0, 100) : null;
     const cleanRole = role ? role.substring(0, 20) : 'USUARIO';
+    const cleanAvatar = avatar && typeof avatar === 'string' ? avatar.substring(0, 200000) : null;
     
     console.log(`[CHAT] Salvando mensagem: ${cleanUser} (${cleanRole}) no vídeo ${videoId}`);
     
@@ -1593,8 +1609,8 @@ app.post('/api/chat', async (req, res) => {
       try {
         // Tentar inserir SEM email e role (mais compatível)
         const result = await pgQuery(
-          `INSERT INTO chat_messages (videoId, "user", text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
-          [videoId, cleanUser, cleanText, timestamp]
+          `INSERT INTO chat_messages (videoId, "user", text, timestamp, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          [videoId, cleanUser, cleanText, timestamp, cleanAvatar]
         );
         
         if (!result.rows || !result.rows[0]) {
@@ -1611,6 +1627,7 @@ app.post('/api/chat', async (req, res) => {
           user: cleanUser,
           text: cleanText,
           timestamp,
+          avatar: cleanAvatar,
           createdAt: new Date().toISOString()
         };
         try {
@@ -1625,8 +1642,8 @@ app.post('/api/chat', async (req, res) => {
         // Se falhar, tentar COM email e role
         try {
           const result = await pgQuery(
-            `INSERT INTO chat_messages (videoId, "user", email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-            [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
+            `INSERT INTO chat_messages (videoId, "user", email, role, text, timestamp, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+            [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp, cleanAvatar]
           );
           
           if (!result.rows || !result.rows[0]) {
@@ -1645,6 +1662,7 @@ app.post('/api/chat', async (req, res) => {
             role: cleanRole,
             text: cleanText,
             timestamp,
+            avatar: cleanAvatar,
             createdAt: new Date().toISOString()
           };
           try {
@@ -1663,8 +1681,8 @@ app.post('/api/chat', async (req, res) => {
       // SQLite - Tentar sem email/role primeiro
       try {
         const result = await dbRun(
-          `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES (?, ?, ?, ?)`,
-          [videoId, cleanUser, cleanText, timestamp]
+          `INSERT INTO chat_messages (videoId, user, text, timestamp, avatar) VALUES (?, ?, ?, ?, ?)`,
+          [videoId, cleanUser, cleanText, timestamp, cleanAvatar]
         );
         console.log(`[CHAT] ✅ Mensagem salva (sem email/role) com ID: ${result.lastID}`);
         
@@ -1675,6 +1693,7 @@ app.post('/api/chat', async (req, res) => {
           user: cleanUser,
           text: cleanText,
           timestamp,
+          avatar: cleanAvatar,
           createdAt: new Date().toISOString()
         };
         broadcastChatMessage(videoId, messageToSend);
@@ -1684,8 +1703,8 @@ app.post('/api/chat', async (req, res) => {
         console.warn('[CHAT] Erro ao salvar sem email/role:', err.message);
         try {
           const result = await dbRun(
-            `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES (?, ?, ?, ?, ?, ?)`,
-            [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
+            `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp, avatar) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp, cleanAvatar]
           );
           console.log(`[CHAT] ✅ Mensagem salva (com email/role) com ID: ${result.lastID}`);
           
@@ -1698,6 +1717,7 @@ app.post('/api/chat', async (req, res) => {
             role: cleanRole,
             text: cleanText,
             timestamp,
+            avatar: cleanAvatar,
             createdAt: new Date().toISOString()
           };
           broadcastChatMessage(videoId, messageToSend);
@@ -1729,7 +1749,7 @@ app.get('/api/chat', async (req, res) => {
     if (USE_POSTGRES) {
       try {
         const result = await pgQuery(
-          `SELECT id, videoId, "user", email, role, text, timestamp, createdAt 
+          `SELECT id, videoId, "user", email, role, text, timestamp, avatar, createdAt 
            FROM chat_messages 
            WHERE videoId = $1 
            ORDER BY createdAt ASC 
@@ -1741,7 +1761,7 @@ app.get('/api/chat', async (req, res) => {
         console.warn('[CHAT GET] PostgreSQL error, trying without email/role:', err.message);
         try {
           const result = await pgQuery(
-            `SELECT id, videoId, "user", text, timestamp, createdAt 
+            `SELECT id, videoId, "user", text, timestamp, avatar, createdAt 
              FROM chat_messages 
              WHERE videoId = $1 
              ORDER BY createdAt ASC 
@@ -1757,7 +1777,7 @@ app.get('/api/chat', async (req, res) => {
     } else {
       try {
         const messages = await dbAll(
-          `SELECT id, videoId, user, email, role, text, timestamp, createdAt 
+          `SELECT id, videoId, user, email, role, text, timestamp, avatar, createdAt 
            FROM chat_messages 
            WHERE videoId = ? 
            ORDER BY createdAt ASC 
@@ -1769,7 +1789,7 @@ app.get('/api/chat', async (req, res) => {
         console.warn('[CHAT GET] SQLite error, trying without email/role:', err.message);
         try {
           const messages = await dbAll(
-            `SELECT id, videoId, user, text, timestamp, createdAt 
+            `SELECT id, videoId, user, text, timestamp, avatar, createdAt 
              FROM chat_messages 
              WHERE videoId = ? 
              ORDER BY createdAt ASC 
