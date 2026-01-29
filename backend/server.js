@@ -990,7 +990,7 @@ app.post('/api/auth/register', async (req, res) => {
       console.log('[AUTH REGISTER] ✅ Usuário criado:', user.id, '| Salt salvo:', !!user.salt, '| Hash salvo:', !!user.passwordHash);
       // create session
       req.session.userId = user.id;
-      return res.json({ ok: true, user: { id: user.id, name: user.id, email: `${user.id}@chat.local` }, userName: user.id });
+      return res.json({ ok: true, user: { id: user.id, name: user.id, email: `${user.id}@chat.local` }, userName: user.id, id: user.id, email: `${user.id}@chat.local` });
     } catch (err) {
       if (err && err.message === 'UserExists') return res.status(409).json({ error: 'Usuário já existe' });
       console.error('register error', err);
@@ -1017,6 +1017,7 @@ app.post('/api/auth/login', async (req, res) => {
       ok: true, 
       userName: user.id,
       id: user.id,
+      email: `${user.id}@chat.local`,
       user: { 
         id: user.id, 
         name: user.id, 

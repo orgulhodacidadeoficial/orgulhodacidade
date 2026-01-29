@@ -32,7 +32,6 @@ window.LiveModal = (function () {
          * Inicializa o modal
          */
         init() {
-            console.log('[LiveModal] Inicializando...');
             this.createModal();
             this.setupEventListeners();
             this.loadUserData();
@@ -73,9 +72,6 @@ window.LiveModal = (function () {
             
             if (settingsBtn) {
                 settingsBtn.addEventListener('click', () => this.showSettingsModal());
-                console.log('[LiveModal] Settings button carregado com sucesso');
-            } else {
-                console.error('[LiveModal] Settings button não encontrado!');
             }
 
             // Content (vídeo + chat)
@@ -130,8 +126,6 @@ window.LiveModal = (function () {
 
             this.overlay.appendChild(this.container);
             document.body.appendChild(this.overlay);
-
-            console.log('[LiveModal] Estrutura HTML criada');
         },
 
         /**
@@ -162,7 +156,6 @@ window.LiveModal = (function () {
                 if (e.key === 'liveModalChatCleared') {
                     const data = JSON.parse(e.newValue || '{}');
                     if (data.videoId === this.currentVideoId && data.timestamp > (this.lastSyncTime - 1000)) {
-                        console.log('[LiveModal] Chat limpo por outra aba, recarregando...');
                         this.messages = [];
                         this.renderChat();
                         this.loadChatFromServer(); // Recarregar do servidor
