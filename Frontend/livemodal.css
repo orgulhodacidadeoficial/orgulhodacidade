@@ -49,6 +49,17 @@
     min-height: 58px; /* smaller header */
     box-shadow: 0 3px 10px rgba(11, 92, 255, 0.14);
     z-index: 10010; /* ensure header stays above overlays */
+    flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+    .live-modal-header {
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: 8px;
+        padding: 12px 12px;
+        min-height: auto;
+    }
 }
 
 /* subtle gradient at the bottom of the header to blend into video */
@@ -70,9 +81,6 @@
     align-items: center;
     gap: 12px;
     flex: 1;
-    position: absolute; /* place at top-left */
-    left: 18px;
-    top: 10px;
 }
 
 .live-modal-header-right {
@@ -82,20 +90,25 @@
     flex-shrink: 0;
 }
 
-.live-modal-header-left {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.live-modal-header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-    position: absolute; /* place at top-right */
-    right: 18px;
-    top: 10px;
+@media (max-width: 720px) {
+    .live-modal-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .live-modal-header-left {
+        position: static !important;
+        flex: 1 1 100%;
+        width: 100%;
+        justify-content: center;
+        gap: 12px;
+    }
+    
+    .live-modal-header-right {
+        position: static !important;
+        flex: 0 1 auto;
+        gap: 12px;
+    }
 }
 
 .live-modal-title {
@@ -113,20 +126,9 @@
     background-clip: text;
     color: transparent;
     text-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
-    position: absolute; /* center above video */
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: -26px; /* overlap slightly over the video (desktop default) */
-    width: calc(100% - 160px); /* leave space for header buttons */
-    white-space: nowrap;
-    pointer-events: none;
     padding: 6px 12px;
+    pointer-events: none;
     transition: transform 220ms cubic-bezier(.2,.9,.2,1), filter 220ms ease;
-}
-
-/* Desktop-only title element (hidden by default, shown on desktop via media query) */
-.live-modal-title--desktop {
-    display: none;
 }
 
 .live-modal-title:hover {
@@ -156,25 +158,100 @@
     width: 64%;
 }
 
-/* Smaller on narrow screens */
-@media (max-width: 720px) {
+/* Responsive adjustments for tablets and mobile */
+@media (max-width: 1024px) {
+    .live-modal-header {
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        gap: 8px;
+    }
+    
+    .live-modal-title {
+        font-size: 20px;
+        padding: 6px 8px;
+        margin: 0;
+        order: 1;
+        flex-basis: 100%;
+        white-space: normal;
+    }
+    
+    .live-modal-header-left {
+        order: 2;
+        justify-content: flex-start;
+        flex: 1;
+        position: static !important;
+        margin-top: 8px;
+    }
+    
+    .live-modal-header-right {
+        order: 2;
+        justify-content: flex-end;
+        gap: 8px;
+        position: static !important;
+        margin-top: 8px;
+    }
+    
+    .live-modal-title:hover {
+        transform: none;
+        filter: none;
+    }
+    
+    .live-modal-title::after {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .live-modal-header {
+        padding: 10px 12px;
+    }
+    
     .live-modal-title {
         font-size: 18px;
-        bottom: -30px;
-        padding: 4px 8px;
+        padding: 6px 8px;
+        margin: 0;
     }
-    .live-modal-title::after { bottom: -8px; height: 5px; }
+    
+    .live-modal-header-left {
+        min-width: 0;
+        margin-top: 6px;
+    }
+    
+    .live-modal-header-right {
+        margin-top: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .live-modal-header {
+        padding: 10px 8px;
+        gap: 6px;
+    }
+    
+    .live-modal-title {
+        font-size: 16px;
+        padding: 6px 6px;
+        margin: 0;
+    }
+    
+    .live-modal-header-left {
+        margin-top: 6px;
+    }
+    
+    .live-modal-header-right {
+        gap: 6px;
+        margin-top: 6px;
+    }
 }
 
 .live-modal-user-display {
     font-size: 16px;
     font-weight: 600;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
+    color: #fff;    
     padding: 8px 16px;
-    border-radius: 20px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;      
     white-space: nowrap;
 }
 .live-modal-logout-btn {
@@ -638,11 +715,6 @@
         box-shadow: 0 20px 60px rgba(0,0,0,0.65);
         transition: bottom 200ms ease, transform 180ms ease;
     }
-    
-    .live-modal-title {
-        font-size: 20px;
-        bottom: -34px;
-    }
 
     .live-modal-header {
         flex-wrap: wrap;
@@ -779,11 +851,6 @@
         height: 38px;
         font-size: 20px;
     }
-
-    .live-modal-title {
-        font-size: 18px;
-        bottom: -44px;
-    }
 }
 
 /* Ensure settings and close sit together on the top-right on very small screens
@@ -792,8 +859,7 @@
     .live-modal-user-display {
         position: absolute;
         left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
+        top: 50%;        
         z-index: 10020;
         margin: 0;
     }
@@ -1052,79 +1118,26 @@
         color: #ffd66b;
     }
 
-    /* Desktop: position title centered inside the header (vertical + horizontal) */
+    /* Desktop: keep title centered in header */
     .live-modal-title {
+        display: block !important;
         position: absolute;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%) !important;
         bottom: auto;
         z-index: 10011;
         width: calc(100% - 180px);
         white-space: nowrap;
         pointer-events: none;
     }
-    /* show desktop-only title and hide mobile variant to avoid duplicate */
-    .live-modal-title--desktop {
-        display: block;
-        position: fixed;
-        left: 50%;
-        top: 40px; /* position at top of screen */
-        transform: translateX(-50%);
-        z-index: 11000; /* above header and video */
-        width: calc(100% - 160px); /* leave space for header buttons */
-        text-align: center;
-        pointer-events: none;
-    }
-
-    .live-modal-title {
-        display: none;
-    }
-    /* Apply same visual styling from mobile title to desktop title */
-    .live-modal-title--desktop {
-        font-size: 28px;
-        font-weight: 800;
-        margin: 0;
-        text-align: center;
-        letter-spacing: 0.4px;
-        font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-        background: linear-gradient(90deg, #ffffff 0%, #ffd66b 30%, #ff6b6b 60%, #9b7cff 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        color: transparent;
-        text-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
-        bottom: auto;
-        white-space: nowrap;
-        padding: 6px 12px;
-        transition: transform 220ms cubic-bezier(.2,.9,.2,1), filter 220ms ease;
-        pointer-events: none;
-    }
-
-    .live-modal-title--desktop:hover {
-        transform: translate(-50%, -53%) scale(1.02);
+    
+    .live-modal-title:hover {
+        transform: translate(-50%, calc(-50% - 3px)) scale(1.02) !important;
         filter: drop-shadow(0 10px 30px rgba(155, 124, 255, 0.18));
     }
-
-    .live-modal-title--desktop::after {
-        content: '';
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: -10px;
-        width: 56%;
-        height: 6px;
-        border-radius: 6px;
-        background: linear-gradient(90deg, rgba(255,107,107,0.95), rgba(255,214,107,0.95), rgba(155,124,255,0.95));
-        box-shadow: 0 6px 18px rgba(155,124,255,0.14);
-        opacity: 0.95;
-        transition: transform 300ms ease, opacity 300ms ease, width 300ms ease;
-        pointer-events: none;
-    }
-
-    .live-modal-title--desktop:hover::after {
-        transform: translateX(-50%) scaleX(1.03);
-        opacity: 1;
-        width: 64%;
+    
+    .live-modal-title::after {
+        display: block;
     }
 }

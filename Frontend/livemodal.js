@@ -62,9 +62,9 @@ window.LiveModal = (function () {
             const header = document.createElement('div');
             header.className = 'live-modal-header';
             header.innerHTML = `
+                <h2 class="live-modal-title">Transmissão ao vivo</h2>
                 <div class="live-modal-header-left">
-                    <h2 class="live-modal-title">Transmissão ao vivo</h2>
-                    <span class="live-modal-user-display" style="margin-left: 20px; font-size: 14px; display: flex; align-items: center; gap: 8px;"></span>
+                    <span class="live-modal-user-display" style="margin-left: -9px; font-size: 14px; display: flex; align-items: center; gap: 8px;"></span>
                 </div>
                 <div class="live-modal-header-right">
                     <button class="live-modal-settings-btn" aria-label="Configurações">
@@ -90,8 +90,6 @@ window.LiveModal = (function () {
             this.videoContainer = document.createElement('div');
             this.videoContainer.className = 'live-modal-video-container';
             this.videoContainer.innerHTML = '<div id="youtubePlayer"></div>';
-            // Desktop title placed inside video container so it overlays the video correctly
-            this.videoContainer.insertAdjacentHTML('beforeend', '<h2 class="live-modal-title--desktop" aria-hidden="true">Transmissão ao vivo</h2>');
 
             // Chat container
             const chatContainer = document.createElement('div');
@@ -480,11 +478,9 @@ window.LiveModal = (function () {
 
             this.currentVideoId = videoId;
 
-            // Atualizar título (mobile & desktop variations)
+            // Atualizar título
             const titleEl = this.container.querySelector('.live-modal-title');
-            const titleDesktopEl = this.container.querySelector('.live-modal-title--desktop');
             if (titleEl) titleEl.textContent = title;
-            if (titleDesktopEl) titleDesktopEl.textContent = title;
 
             // Atualizar info do usuário no header (com avatar se disponível)
             const userDisplay = this.container.querySelector('.live-modal-user-display');
