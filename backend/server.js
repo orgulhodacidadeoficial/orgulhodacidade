@@ -27,6 +27,15 @@ if (USE_POSTGRES) {
     console.error('Erro no pool PostgreSQL:', err);
   });
   
+  // Test connection immediately
+  pool.query('SELECT NOW()', (err, result) => {
+    if (err) {
+      console.error('❌ Erro ao conectar ao PostgreSQL:', err.message);
+    } else {
+      console.log('✅ Conectado ao PostgreSQL com sucesso!');
+    }
+  });
+  
   console.log('✅ Usando PostgreSQL para persistência de dados');
   // Initialize tables asynchronously - serão inicializadas em ensureStorageFiles()
 } else {
@@ -200,6 +209,7 @@ async function migrateChatMessagesTable() {
 // PostgreSQL Initialize Tables
 async function initializePgTables() {
   try {
+    console.log('[DB INIT] Iniciando criação de tabelas PostgreSQL...');
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS inscricoes (
         id SERIAL PRIMARY KEY,
@@ -209,6 +219,7 @@ async function initializePgTables() {
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('[DB INIT] Tabela inscricoes criada/verificada');
     
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS contatos (
@@ -279,6 +290,7 @@ async function initializePgTables() {
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    console.log('[DB INIT] Tabela chat_messages criada/verificada');
     
     // Migração: Adicionar colunas email e role se não existirem (para compatibilidade)
     await migrateChatMessagesTablePg();
@@ -809,11 +821,16 @@ async function writeJson(tableName, arr) {
 // Ensure storage tables exist on startup (chamado em initializeTables)
 async function ensureStorageFiles() {
   if (USE_POSTGRES) {
-    console.log('Inicializando tabelas PostgreSQL...');
-    await initializePgTables();
-    console.log('✅ Storage tables inicializados via PostgreSQL');
+    console.log('[STARTUP] 🔄 Inicializando tabelas PostgreSQL...');
+    try {
+      await initializePgTables();
+      console.log('[STARTUP] ✅ Storage tables inicializados via PostgreSQL');
+    } catch (err) {
+      console.error('[STARTUP] ❌ Erro ao inicializar PostgreSQL:', err);
+      throw err;
+    }
   } else {
-    console.log('✅ Storage tables já inicializados via SQLite');
+    console.log('[STARTUP] ✅ Storage tables já inicializados via SQLite');
   }
 }
 
@@ -1461,7 +1478,7 @@ app.post('/api/user/update-profile', express.json({ limit: '10mb' }), async (req
 // ===== CHAT ENDPOINTS =====
 
 // POST /api/chat - Salva uma mensagem de chat
-app.post('/api/chat', express.json(), async (req, res) => {
+app.post('/api/chat', async (req, res) => {
   try {
     console.log('[CHAT POST] Recebido:', req.body);
     const { videoId, user, email, role, text, timestamp } = req.body;
@@ -1707,7 +1724,7 @@ app.delete('/api/chat/:id', async (req, res) => {
 });
 
 // POST /api/chat/clear - Limpar todas as mensagens de um vídeo (apenas proprietario/adm)
-app.post('/api/chat/clear', express.json(), async (req, res) => {
+app.post('/api/chat/clear', async (req, res) => {
   try {
     const { videoId, userRole, userName } = req.body;
     
@@ -1754,7 +1771,7 @@ app.get('/api/chat/proprietario', express.json(), async (req, res) => {
 });
 
 // POST /api/chat/proprietario - Define/registra o proprietário
-app.post('/api/chat/proprietario', express.json(), async (req, res) => {
+app.post('/api/chat/proprietario', async (req, res) => {
   try {
     const { userName, videoId } = req.body;
     
@@ -1782,7 +1799,7 @@ app.get('/api/chat/admins-list', express.json(), async (req, res) => {
 });
 
 // POST /api/chat/promote-admin - Promover usuário a ADM
-app.post('/api/chat/promote-admin', express.json(), async (req, res) => {
+app.post('/api/chat/promote-admin', async (req, res) => {
   try {
     const { email } = req.body;
     
@@ -1804,7 +1821,7 @@ app.post('/api/chat/promote-admin', express.json(), async (req, res) => {
 });
 
 // POST /api/chat/demote-admin - Remover ADM
-app.post('/api/chat/demote-admin', express.json(), async (req, res) => {
+app.post('/api/chat/demote-admin', async (req, res) => {
   try {
     const { email } = req.body;
     
