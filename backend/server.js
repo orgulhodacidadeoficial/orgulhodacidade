@@ -55,10 +55,13 @@ if (USE_POSTGRES) {
 // PostgreSQL Query wrapper
 async function pgQuery(sql, params = []) {
   try {
+    console.log('[pgQuery] Executando:', sql.substring(0, 100) + (sql.length > 100 ? '...' : ''));
     const result = await pool.query(sql, params);
+    console.log('[pgQuery] ✅ Sucesso');
     return result;
   } catch (err) {
-    console.error('Erro PostgreSQL:', err);
+    console.error('[pgQuery] ❌ Erro:', err.message);
+    console.error('[pgQuery] SQL:', sql.substring(0, 150));
     throw err;
   }
 }
@@ -210,16 +213,25 @@ async function migrateChatMessagesTable() {
 async function initializePgTables() {
   try {
     console.log('[DB INIT] Iniciando criação de tabelas PostgreSQL...');
+    
+    // Primeiro, criar a tabela chat_messages ANTES de outras
+    console.log('[DB INIT] Criando tabela chat_messages...');
     await pgQuery(`
-      CREATE TABLE IF NOT EXISTS inscricoes (
+      CREATE TABLE IF NOT EXISTS chat_messages (
         id SERIAL PRIMARY KEY,
-        data JSONB,
-        receivedAt BIGINT,
-        ip TEXT,
+        videoId TEXT NOT NULL,
+        user TEXT NOT NULL,
+        email TEXT,
+        role TEXT,
+        text TEXT NOT NULL,
+        timestamp TEXT,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-    console.log('[DB INIT] Tabela inscricoes criada/verificada');
+    console.log('[DB INIT] ✅ Tabela chat_messages criada/verificada');
+    
+    // Depois criar as outras tabelas
+    console.log('[DB INIT] Criando tabela inscricoes...');
     
     await pgQuery(`
       CREATE TABLE IF NOT EXISTS contatos (
@@ -278,26 +290,14 @@ async function initializePgTables() {
       )
     `);
     
-    await pgQuery(`
-      CREATE TABLE IF NOT EXISTS chat_messages (
-        id SERIAL PRIMARY KEY,
-        videoId TEXT NOT NULL,
-        user TEXT NOT NULL,
-        email TEXT,
-        role TEXT,
-        text TEXT NOT NULL,
-        timestamp TEXT,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log('[DB INIT] Tabela chat_messages criada/verificada');
-    
     // Migração: Adicionar colunas email e role se não existirem (para compatibilidade)
     await migrateChatMessagesTablePg();
     
     console.log('✅ Tabelas PostgreSQL inicializadas com sucesso');
   } catch (err) {
-    console.error('Erro inicializando tabelas PostgreSQL:', err);
+    console.error('[DB INIT] ❌ Erro crítico inicializando tabelas PostgreSQL:', err.message);
+    console.error('[DB INIT] Stack:', err.stack);
+    throw err;
   }
 }
 
