@@ -2158,6 +2158,11 @@ ensureStorageFiles()
     // Chat state removed; continue startup
     return loadPlaylistFromFile();
   })
+  .catch((err) => {
+    console.error('[STARTUP] ❌ Erro fatal ao inicializar banco de dados:', err.message);
+    console.error('[STARTUP] ❌ Stack:', err.stack);
+    process.exit(1);
+  })
   .then(() => {
     // Setup WebSocket server para playlist
     wss.on('connection', (ws, req) => {
