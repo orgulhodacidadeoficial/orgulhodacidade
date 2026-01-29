@@ -361,21 +361,28 @@ function broadcastPlaylist(action, data) {
 
 // Broadcast de mensagens de chat para um videoId específico
 function broadcastChatMessage(videoId, message) {
-  const clients = chatClients.get(videoId);
-  if (!clients) return;
-  
-  const payload = JSON.stringify({ type: 'message', data: message, timestamp: new Date().toISOString() });
-  for (const client of clients) {
-    if (client.readyState === WebSocket.OPEN) {
-      try {
-        client.send(payload);
-      } catch (e) {
-        console.warn('[Chat] Erro ao enviar mensagem:', e.message);
-        clients.delete(client);
+  try {
+    const clients = chatClients.get(videoId);
+    if (!clients) {
+      console.log(`[Chat] Nenhum cliente conectado para ${videoId}`);
+      return;
+    }
+    
+    const payload = JSON.stringify({ type: 'message', data: message, timestamp: new Date().toISOString() });
+    for (const client of clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        try {
+          client.send(payload);
+        } catch (e) {
+          console.warn('[Chat] Erro ao enviar mensagem:', e.message);
+          clients.delete(client);
+        }
       }
     }
+    console.log(`[Chat] Mensagem enviada para ${videoId} - Clientes: ${clients.size}`);
+  } catch (e) {
+    console.error('[Chat] Erro crítico em broadcastChatMessage:', e.message);
   }
-  console.log(`[Chat] Mensagem enviada para ${videoId} - Clientes: ${clients.size}`);
 }
 
 // Gerenciamento de playlist sincronizada
@@ -1456,10 +1463,12 @@ app.post('/api/user/update-profile', express.json({ limit: '10mb' }), async (req
 // POST /api/chat - Salva uma mensagem de chat
 app.post('/api/chat', express.json(), async (req, res) => {
   try {
+    console.log('[CHAT POST] Recebido:', req.body);
     const { videoId, user, email, role, text, timestamp } = req.body;
     
     // Validações básicas
     if (!videoId || !user || !text) {
+      console.warn('[CHAT POST] Validação falhou - campos obrigatórios faltando');
       return res.status(400).json({ error: 'Missing required fields: videoId, user, text are required' });
     }
     
@@ -1479,6 +1488,12 @@ app.post('/api/chat', express.json(), async (req, res) => {
           `INSERT INTO chat_messages (videoId, user, text, timestamp) VALUES ($1, $2, $3, $4) RETURNING id`,
           [videoId, cleanUser, cleanText, timestamp]
         );
+        
+        if (!result.rows || !result.rows[0]) {
+          console.error('[CHAT] Erro: resultado vazio do PostgreSQL');
+          return res.status(500).json({ error: 'Database error: no result returned' });
+        }
+        
         console.log(`[CHAT] ✅ Mensagem salva (sem email/role) com ID: ${result.rows[0].id}`);
         
         // ✨ Broadcast via WebSocket
@@ -1490,7 +1505,11 @@ app.post('/api/chat', express.json(), async (req, res) => {
           timestamp,
           createdAt: new Date().toISOString()
         };
-        broadcastChatMessage(videoId, messageToSend);
+        try {
+          broadcastChatMessage(videoId, messageToSend);
+        } catch (wsErr) {
+          console.warn('[CHAT] Erro ao fazer broadcast (não crítico):', wsErr.message);
+        }
         
         return res.json({ success: true, id: result.rows[0].id });
       } catch (err) {
@@ -1501,6 +1520,12 @@ app.post('/api/chat', express.json(), async (req, res) => {
             `INSERT INTO chat_messages (videoId, user, email, role, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
             [videoId, cleanUser, cleanEmail, cleanRole, cleanText, timestamp]
           );
+          
+          if (!result.rows || !result.rows[0]) {
+            console.error('[CHAT] Erro: resultado vazio do PostgreSQL (com email/role)');
+            return res.status(500).json({ error: 'Database error: no result returned' });
+          }
+          
           console.log(`[CHAT] ✅ Mensagem salva (com email/role) com ID: ${result.rows[0].id}`);
           
           // ✨ Broadcast via WebSocket
@@ -1514,7 +1539,11 @@ app.post('/api/chat', express.json(), async (req, res) => {
             timestamp,
             createdAt: new Date().toISOString()
           };
-          broadcastChatMessage(videoId, messageToSend);
+          try {
+            broadcastChatMessage(videoId, messageToSend);
+          } catch (wsErr) {
+            console.warn('[CHAT] Erro ao fazer broadcast (não crítico):', wsErr.message);
+          }
           
           return res.json({ success: true, id: result.rows[0].id });
         } catch (err2) {
