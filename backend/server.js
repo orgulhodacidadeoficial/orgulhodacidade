@@ -290,6 +290,9 @@ async function initializePgTables() {
       )
     `);
     
+    // Migração: Renomear colunas da tabela users se necessário
+    await migrateUsersTablePg();
+    
     // Migração: Adicionar colunas email e role se não existirem (para compatibilidade)
     await migrateChatMessagesTablePg();
     
@@ -298,6 +301,47 @@ async function initializePgTables() {
     console.error('[DB INIT] ❌ Erro crítico inicializando tabelas PostgreSQL:', err.message);
     console.error('[DB INIT] Stack:', err.stack);
     throw err;
+  }
+}
+
+// Migração para PostgreSQL - Renomeia colunas da tabela users se necessário
+async function migrateUsersTablePg() {
+  try {
+    console.log('[MIGRATE PG] Verificando tabela users...');
+    const result = await pgQuery(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users'
+    `);
+    
+    const columnNames = result.rows.map(row => row.column_name);
+    console.log('[MIGRATE PG] Colunas encontradas em users:', columnNames);
+    
+    // Se tiver "passwordhash" (minúsculas), renomear para "passwordHash"
+    if (columnNames.includes('passwordhash') && !columnNames.includes('passwordHash')) {
+      console.log('[MIGRATE PG] Renomeando passwordhash para "passwordHash"');
+      await pgQuery(`ALTER TABLE users RENAME COLUMN passwordhash TO "passwordHash"`);
+    }
+    
+    // Renomear outras colunas se necessário
+    if (columnNames.includes('isadmin') && !columnNames.includes('isAdmin')) {
+      console.log('[MIGRATE PG] Renomeando isadmin para "isAdmin"');
+      await pgQuery(`ALTER TABLE users RENAME COLUMN isadmin TO "isAdmin"`);
+    }
+    
+    if (columnNames.includes('ispresident') && !columnNames.includes('isPresident')) {
+      console.log('[MIGRATE PG] Renomeando ispresident para "isPresident"');
+      await pgQuery(`ALTER TABLE users RENAME COLUMN ispresident TO "isPresident"`);
+    }
+    
+    if (columnNames.includes('createdat') && !columnNames.includes('createdAt')) {
+      console.log('[MIGRATE PG] Renomeando createdat para "createdAt"');
+      await pgQuery(`ALTER TABLE users RENAME COLUMN createdat TO "createdAt"`);
+    }
+    
+    console.log('[MIGRATE PG] ✅ users table atualizada com sucesso');
+  } catch (err) {
+    console.error('[MIGRATE PG] Erro ao migrar users:', err.message);
   }
 }
 
