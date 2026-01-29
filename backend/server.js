@@ -1402,6 +1402,25 @@ app.post('/api/admin/logout', (req, res) => {
   }
 });
 
+// DELETE /api/admin/users - Limpar todos os usuários de teste
+app.post('/api/admin/users/clear', requireAdmin, async (req, res) => {
+  try {
+    console.log('[ADMIN] Limpando tabela de usuários...');
+    
+    if (USE_POSTGRES) {
+      await pgQuery(`DELETE FROM users`);
+    } else {
+      await dbRun(`DELETE FROM users`);
+    }
+    
+    console.log('[ADMIN] ✅ Todos os usuários foram deletados');
+    return res.json({ ok: true, message: 'Todos os usuários foram deletados com sucesso' });
+  } catch (err) {
+    console.error('[ADMIN] Erro ao limpar usuários:', err);
+    return res.status(500).json({ error: 'Erro ao limpar usuários' });
+  }
+});
+
 // Serve /admin route only if session is present (prevents simple bypass)
 app.get('/admin', requireAdmin, (req, res) => {
   res.sendFile(path.join(FRONTEND_DIR, 'admin.html'));
