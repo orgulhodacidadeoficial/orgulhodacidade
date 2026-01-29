@@ -316,13 +316,10 @@ window.LiveModal = (function () {
          * Abre o modal com um vídeo do YouTube
          */
         async open(youtubeUrl, title = 'Transmissão ao vivo') {
-            console.log('[LiveModal] Abrindo para URL:', youtubeUrl);
-
             // Se não autenticado, mostrar login primeiro
             if (!this.authenticated) {
                 await this.showLoginModal();
                 if (!this.authenticated) {
-                    console.log('[LiveModal] Usuário cancelou login');
                     return;
                 }
             }
@@ -368,6 +365,14 @@ window.LiveModal = (function () {
          */
         showLoginModal() {
             return new Promise((resolve) => {
+                // Remover qualquer modal de login anterior
+                const existingModals = document.querySelectorAll('div[style*="position: fixed"][style*="z-index: 10000"]');
+                existingModals.forEach(modal => {
+                    if (modal.querySelector('#login-id') || modal.querySelector('#login-submit')) {
+                        modal.remove();
+                    }
+                });
+
                 // Criar overlay do login
                 const loginOverlay = document.createElement('div');
                 loginOverlay.style.cssText = `
@@ -671,6 +676,14 @@ window.LiveModal = (function () {
          */
         showCreateAccountModal() {
             return new Promise((resolve) => {
+                // Remover qualquer modal de criar conta anterior
+                const existingModals = document.querySelectorAll('div[style*="position: fixed"][style*="z-index: 10000"]');
+                existingModals.forEach(modal => {
+                    if (modal.querySelector('#create-id') || modal.querySelector('#create-submit')) {
+                        modal.remove();
+                    }
+                });
+
                 const createOverlay = document.createElement('div');
                 createOverlay.style.cssText = `
                     position: fixed;
