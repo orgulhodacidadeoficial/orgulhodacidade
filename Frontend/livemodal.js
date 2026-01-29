@@ -396,15 +396,15 @@ window.LiveModal = (function () {
                 `;
 
                 loginBox.innerHTML = `
-                    <h2 style="margin: 0 0 10px 0; text-align: center; font-size: 24px;">
+                    <h2 style='margin: 0 0 10px 0; text-align: center; font-size: 24px;'>
                         <i class="fas fa-comments"></i> Entrar no Chat
                     </h2>
-                    <p style="text-align: center; opacity: 0.9; margin: 0 0 25px 0; font-size: 14px;">
+                    <p style='text-align: center; opacity: 0.9; margin: 0 0 25px 0; font-size: 14px;'>
                         Faça login para participar da transmissão ao vivo
                     </p>
                     
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                    <div style='margin-bottom: 15px;'>
+                        <label style='display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;'>
                             <i class="fas fa-user"></i> Usuário *
                         </label>
                         <input 
@@ -412,7 +412,7 @@ window.LiveModal = (function () {
                             id="login-id" 
                             placeholder="Seu usuário"
                             autocomplete="username"
-                            style="
+                            style='
                                 width: 100%;
                                 padding: 10px 12px;
                                 border: 1px solid rgba(255, 255, 255, 0.3);
@@ -422,12 +422,12 @@ window.LiveModal = (function () {
                                 font-size: 14px;
                                 box-sizing: border-box;
                                 font-family: inherit;
-                            "
+                            '
                         >
                     </div>
                     
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                    <div style='margin-bottom: 20px;'>
+                        <label style='display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;'>
                             <i class="fas fa-lock"></i> Senha *
                         </label>
                         <input 
@@ -435,7 +435,7 @@ window.LiveModal = (function () {
                             id="login-password" 
                             placeholder="Sua senha"
                             autocomplete="current-password"
-                            style="
+                            style='
                                 width: 100%;
                                 padding: 10px 12px;
                                 border: 1px solid rgba(255, 255, 255, 0.3);
@@ -445,11 +445,11 @@ window.LiveModal = (function () {
                                 font-size: 14px;
                                 box-sizing: border-box;
                                 font-family: inherit;
-                            "
+                            '
                         >
                     </div>
 
-                    <div id="login-error" style="
+                    <div id="login-error" style='
                         margin-bottom: 15px;
                         padding: 10px;
                         border-radius: 4px;
@@ -458,9 +458,9 @@ window.LiveModal = (function () {
                         font-size: 13px;
                         display: none;
                         text-align: center;
-                    "></div>
+                    '></div>
                     
-                    <button id="login-submit" style="
+                    <button id="login-submit" style='
                         width: 100%;
                         padding: 12px;
                         background: rgba(255, 255, 255, 0.25);
@@ -473,11 +473,11 @@ window.LiveModal = (function () {
                         margin-bottom: 10px;
                         font-size: 14px;
                         font-family: inherit;
-                    ">
+                    '>
                         <i class="fas fa-sign-in-alt"></i> Entrar
                     </button>
 
-                    <button id="login-create-account" style="
+                    <button id="login-create-account" style='
                         width: 100%;
                         padding: 12px;
                         background: rgba(100, 255, 100, 0.2);
@@ -490,11 +490,11 @@ window.LiveModal = (function () {
                         margin-bottom: 10px;
                         font-size: 14px;
                         font-family: inherit;
-                    ">
+                    '>
                         <i class="fas fa-user-plus"></i> Criar Conta
                     </button>
                     
-                    <button id="login-cancel" style="
+                    <button id="login-cancel" style='
                         width: 100%;
                         padding: 12px;
                         background: rgba(255, 255, 255, 0.1);
@@ -506,11 +506,11 @@ window.LiveModal = (function () {
                         transition: all 0.3s;
                         font-size: 14px;
                         font-family: inherit;
-                    ">
+                    '>
                         <i class="fas fa-times"></i> Cancelar
                     </button>
                     
-                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2); font-size: 12px; opacity: 0.8; text-align: center;">
+                    <div style='margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.2); font-size: 12px; opacity: 0.8; text-align: center;'>
                         Seus dados são salvos localmente no navegador
                     </div>
                 `;
@@ -698,15 +698,15 @@ window.LiveModal = (function () {
                 `;
 
                 createBox.innerHTML = `
-                    <h2 style="margin: 0 0 10px 0; text-align: center; font-size: 24px;">
+                    <h2 style='margin: 0 0 10px 0; text-align: center; font-size: 24px;'>
                         <i class="fas fa-user-plus"></i> Criar Conta
                     </h2>
-                    <p style="text-align: center; opacity: 0.9; margin: 0 0 25px 0; font-size: 14px;">
+                    <p style='text-align: center; opacity: 0.9; margin: 0 0 25px 0; font-size: 14px;'>
                         Registre-se para participar do chat
                     </p>
                     
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                    <div style='margin-bottom: 15px;'>
+                        <label style='display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;'>
                             <i class="fas fa-user"></i> Usuário *
                         </label>
                         <input 
@@ -714,7 +714,7 @@ window.LiveModal = (function () {
                             id="create-id" 
                             placeholder="Seu usuário"
                             autocomplete="username"
-                            style="
+                            style='
                                 width: 100%;
                                 padding: 10px 12px;
                                 border: 1px solid rgba(255, 255, 255, 0.3);
@@ -724,13 +724,13 @@ window.LiveModal = (function () {
                                 font-size: 14px;
                                 box-sizing: border-box;
                                 font-family: inherit;
-                            "
+                            '
                         >
-                        <small style="opacity: 0.8; display: block; margin-top: 4px;">Mínimo 3 caracteres</small>
+                        <small style='opacity: 0.8; display: block; margin-top: 4px;'>Mínimo 3 caracteres</small>
                     </div>
                     
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                    <div style='margin-bottom: 15px;'>
+                        <label style='display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;'>
                             <i class="fas fa-lock"></i> Senha *
                         </label>
                         <input 
@@ -738,7 +738,7 @@ window.LiveModal = (function () {
                             id="create-password" 
                             placeholder="Crie uma senha"
                             autocomplete="new-password"
-                            style="
+                            style='
                                 width: 100%;
                                 padding: 10px 12px;
                                 border: 1px solid rgba(255, 255, 255, 0.3);
@@ -748,13 +748,13 @@ window.LiveModal = (function () {
                                 font-size: 14px;
                                 box-sizing: border-box;
                                 font-family: inherit;
-                            "
+                            '
                         >
-                        <small style="opacity: 0.8; display: block; margin-top: 4px;">Mínimo 4 caracteres</small>
+                        <small style='opacity: 0.8; display: block; margin-top: 4px;'>Mínimo 4 caracteres</small>
                     </div>
 
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                    <div style='margin-bottom: 20px;'>
+                        <label style='display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;'>
                             <i class="fas fa-lock-open"></i> Confirmar Senha *
                         </label>
                         <input 
@@ -762,7 +762,7 @@ window.LiveModal = (function () {
                             id="create-confirm-password" 
                             placeholder="Confirme a senha"
                             autocomplete="new-password"
-                            style="
+                            style='
                                 width: 100%;
                                 padding: 10px 12px;
                                 border: 1px solid rgba(255, 255, 255, 0.3);
@@ -772,11 +772,11 @@ window.LiveModal = (function () {
                                 font-size: 14px;
                                 box-sizing: border-box;
                                 font-family: inherit;
-                            "
+                            '
                         >
                     </div>
 
-                    <div id="create-error" style="
+                    <div id="create-error" style='
                         margin-bottom: 15px;
                         padding: 10px;
                         border-radius: 4px;
@@ -785,9 +785,9 @@ window.LiveModal = (function () {
                         font-size: 13px;
                         display: none;
                         text-align: center;
-                    "></div>
+                    '></div>
                     
-                    <button id="create-submit" style="
+                    <button id="create-submit" style='
                         width: 100%;
                         padding: 12px;
                         background: rgba(255, 255, 255, 0.25);
@@ -800,11 +800,11 @@ window.LiveModal = (function () {
                         margin-bottom: 10px;
                         font-size: 14px;
                         font-family: inherit;
-                    ">
+                    '>
                         <i class="fas fa-check"></i> Criar Conta
                     </button>
                     
-                    <button id="create-cancel" style="
+                    <button id="create-cancel" style='
                         width: 100%;
                         padding: 12px;
                         background: rgba(255, 255, 255, 0.1);
@@ -816,7 +816,7 @@ window.LiveModal = (function () {
                         transition: all 0.3s;
                         font-size: 14px;
                         font-family: inherit;
-                    ">
+                    '>
                         <i class="fas fa-arrow-left"></i> Voltar
                     </button>
                 `;
