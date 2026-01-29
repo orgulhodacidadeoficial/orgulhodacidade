@@ -844,7 +844,7 @@ function hashPassword(password, salt = null) {
 async function findUserByEmail(email) {
   if (USE_POSTGRES) {
     const result = await pgQuery(
-      'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
+      'SELECT id, name, email, "passwordHash", salt, "isAdmin", "isPresident", "createdAt" FROM users WHERE LOWER(email) = LOWER($1)',
       [email]
     );
     return result.rows[0] || null;
@@ -860,7 +860,7 @@ async function findUserByEmail(email) {
 async function findUserById(id) {
   if (USE_POSTGRES) {
     const result = await pgQuery(
-      'SELECT * FROM users WHERE id = $1',
+      'SELECT id, name, email, "passwordHash", salt, "isAdmin", "isPresident", "createdAt" FROM users WHERE id = $1',
       [id]
     );
     return result.rows[0] || null;
