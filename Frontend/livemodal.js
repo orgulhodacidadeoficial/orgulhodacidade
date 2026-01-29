@@ -1813,11 +1813,14 @@ window.LiveModal = (function () {
                 }
                 
                 return `
-                    <div class="live-modal-chat-message" style="border-left-color: ${isMine ? '#ff9800' : '#0b5cff'}; opacity: ${isMine ? '1' : '0.95'}; display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 6px;">
-                        ${avatarImg}
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                <span class="live-modal-chat-user" style="color: ${roleColor}; text-shadow: ${textShadow}; font-weight: bold; white-space: nowrap;">${roleIcon} ${this.escapeHtml(msg.user)}</span>
+                    <div class="live-modal-chat-message" style="border-left-color: ${isMine ? '#ff9800' : '#0b5cff'}; opacity: ${isMine ? '1' : '0.95'};">
+                        <div class="avatar-wrap">${avatarImg}</div>
+                        <div class="live-modal-chat-body" style="flex: 1; min-width: 0;">
+                            <div class="live-modal-chat-meta" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
+                                <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                    <span class="live-modal-chat-user" style="color: ${roleColor}; text-shadow: ${textShadow}; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${roleIcon} ${this.escapeHtml(msg.user)}</span>
+                                </div>
+                                <span class="live-modal-chat-timestamp">${this.escapeHtml(msg.timestamp || '')}</span>
                             </div>
                             <div class="live-modal-chat-text" style="color: #fff; font-size: 14px; word-wrap: break-word; word-break: break-word;">${this.escapeHtml(msg.text)}</div>
                         </div>
