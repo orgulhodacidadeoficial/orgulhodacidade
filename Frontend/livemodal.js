@@ -14,6 +14,7 @@ window.LiveModal = (function () {
         chatMessages: null,
         chatInput: null,
         chatSendBtn: null,
+        chatHeaderOnlineCount: null, // Elemento para exibir contagem online
         currentVideoId: null,
         messages: [],
         userName: null,
@@ -35,6 +36,13 @@ window.LiveModal = (function () {
             this.createModal();
             this.setupEventListeners();
             this.loadUserData();
+            // ensure each tab has a unique presence id (per-tab)
+            let pid = sessionStorage.getItem('liveModalPresenceId');
+            if (!pid) {
+                pid = 'pm_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+                sessionStorage.setItem('liveModalPresenceId', pid);
+            }
+            this.presenceId = pid;
         },
 
         /**
@@ -82,16 +90,35 @@ window.LiveModal = (function () {
             this.videoContainer = document.createElement('div');
             this.videoContainer.className = 'live-modal-video-container';
             this.videoContainer.innerHTML = '<div id="youtubePlayer"></div>';
+            // Desktop title placed inside video container so it overlays the video correctly
+            this.videoContainer.insertAdjacentHTML('beforeend', '<h2 class="live-modal-title--desktop" aria-hidden="true">Transmissão ao vivo</h2>');
 
             // Chat container
             const chatContainer = document.createElement('div');
             chatContainer.className = 'live-modal-chat-container';
+            // keep reference for resizing logic
+            this.chatContainer = chatContainer;
+
+            // Resize handle (drag to resize chat) - placed above chat header
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'live-modal-chat-resize-handle';
+            resizeHandle.innerHTML = `<div class="live-modal-chat-resize-icon">⇅</div>`;
+            this.chatResizeHandle = resizeHandle;
 
             const chatHeader = document.createElement('div');
             chatHeader.className = 'live-modal-chat-header';
             chatHeader.innerHTML = `
-                <i class="fas fa-comments"></i> Chat ao vivo
+                <div class="live-modal-chat-header-content">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-comments"></i> Chat ao vivo
+                    </div>
+                    <div class="live-modal-online-indicator">
+                        <div class="live-modal-online-dot"></div>
+                        <span id="live-modal-online-count">1 online</span>
+                    </div>
+                </div>
             `;
+            this.chatHeaderOnlineCount = chatHeader.querySelector('#live-modal-online-count');
 
             this.chatMessages = document.createElement('div');
             this.chatMessages.className = 'live-modal-chat-messages';
@@ -117,6 +144,9 @@ window.LiveModal = (function () {
             chatContainer.appendChild(chatHeader);
             chatContainer.appendChild(this.chatMessages);
             chatContainer.appendChild(chatInputArea);
+
+            // insert resize handle at top of chat (above header)
+            chatContainer.insertBefore(this.chatResizeHandle, chatHeader);
 
             content.appendChild(this.videoContainer);
             content.appendChild(chatContainer);
@@ -151,6 +181,30 @@ window.LiveModal = (function () {
                 if (e.key === 'Enter') this.sendMessage();
             });
 
+            // Ensure chat scrolls to bottom when input receives focus (mobile keyboards)
+            this.chatInput.addEventListener('focus', () => {
+                setTimeout(() => {
+                    try {
+                        if (this.chatMessages) this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                    } catch (e) {
+                        // ignore
+                    }
+                }, 300);
+            });
+
+            // On resize (keyboard open/close or orientation change), keep chat scrolled
+            window.addEventListener('resize', () => {
+                setTimeout(() => {
+                    try {
+                        if (this.overlay && this.overlay.classList.contains('active') && this.chatMessages) {
+                            this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
+                }, 200);
+            });
+
             // Detectar eventos de outras abas (ex: /clear)
             window.addEventListener('storage', (e) => {
                 if (e.key === 'liveModalChatCleared') {
@@ -162,6 +216,92 @@ window.LiveModal = (function () {
                     }
                 }
             });
+
+            // Quando a aba fica visível, enviar presença imediata
+            document.addEventListener('visibilitychange', () => {
+                try {
+                    if (document.visibilityState === 'visible' && this.overlay && this.overlay.classList.contains('active')) {
+                        this.pingPresence().catch(()=>{});
+                    }
+                } catch (e) {}
+            });
+
+            // Resize (drag) handlers for chat
+            this.minChatHeightPx = 120;
+            this.maxChatHeightPx = Math.round(window.innerHeight * 0.9);
+            this._onChatResizeMove = this.onChatResizeMove.bind(this);
+            this._onChatResizeEnd = this.onChatResizeEnd.bind(this);
+
+            if (this.chatResizeHandle) {
+                this.chatResizeHandle.addEventListener('mousedown', (e) => this.onChatResizeStart(e));
+                // allow preventing default so touch dragging won't immediately scroll the page
+                this.chatResizeHandle.addEventListener('touchstart', (e) => this.onChatResizeStart(e), {passive: false});
+                // pointer events for broader device support
+                this.chatResizeHandle.addEventListener('pointerdown', (e) => this.onChatResizeStart(e));
+            }
+        },
+
+        onChatResizeStart(e) {
+            // Only enable resize on narrow/mobile screens
+            if (window.innerWidth > 768) {
+                return; // ignore on desktop
+            }
+
+            e.preventDefault && e.preventDefault();
+            this.isResizingChat = true;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            this._chatResizeStartY = clientY;
+            const rect = this.chatContainer.getBoundingClientRect();
+            this._chatResizeStartHeight = rect.height;
+            // recompute limits
+            this.maxChatHeightPx = Math.round(window.innerHeight * 0.95);
+            document.addEventListener('mousemove', this._onChatResizeMove);
+            document.addEventListener('touchmove', this._onChatResizeMove, {passive: false});
+            document.addEventListener('pointermove', this._onChatResizeMove);
+            document.addEventListener('mouseup', this._onChatResizeEnd);
+            document.addEventListener('pointerup', this._onChatResizeEnd);
+            document.addEventListener('touchend', this._onChatResizeEnd);
+            document.body.style.userSelect = 'none';
+        },
+
+        onChatResizeMove(e) {
+            if (!this.isResizingChat) return;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const dy = this._chatResizeStartY - clientY; // drag up => positive
+            let newHeight = this._chatResizeStartHeight + dy;
+            newHeight = Math.max(this.minChatHeightPx, Math.min(this.maxChatHeightPx, newHeight));
+
+            // apply height to chat container and adjust messages area
+            try {
+                this.chatContainer.style.height = newHeight + 'px';
+                const headerEl = this.chatContainer.querySelector('.live-modal-chat-header');
+                const inputEl = this.chatContainer.querySelector('.live-modal-chat-input-container');
+                const headerH = headerEl ? headerEl.getBoundingClientRect().height : 56;
+                const inputH = inputEl ? inputEl.getBoundingClientRect().height : 60;
+                if (this.chatMessages) {
+                    const pad = 28; // estimated paddings
+                    const messagesMax = Math.max(40, newHeight - headerH - inputH - pad);
+                    this.chatMessages.style.maxHeight = messagesMax + 'px';
+                }
+            } catch (err) {
+                // ignore
+            }
+
+            // Prevent page scroll while dragging on touch
+            if (e.cancelable) e.preventDefault();
+        },
+
+        onChatResizeEnd() {
+            if (!this.isResizingChat) return;
+            this.isResizingChat = false;
+            document.removeEventListener('mousemove', this._onChatResizeMove);
+            document.removeEventListener('touchmove', this._onChatResizeMove);
+            document.removeEventListener('pointermove', this._onChatResizeMove);
+            document.removeEventListener('mouseup', this._onChatResizeEnd);
+            document.removeEventListener('pointerup', this._onChatResizeEnd);
+            document.removeEventListener('touchend', this._onChatResizeEnd);
+            document.body.style.userSelect = '';
+            // leave the inline height as-is so it stays where the user left it
         },
 
         /**
@@ -340,9 +480,11 @@ window.LiveModal = (function () {
 
             this.currentVideoId = videoId;
 
-            // Atualizar título
+            // Atualizar título (mobile & desktop variations)
             const titleEl = this.container.querySelector('.live-modal-title');
+            const titleDesktopEl = this.container.querySelector('.live-modal-title--desktop');
             if (titleEl) titleEl.textContent = title;
+            if (titleDesktopEl) titleDesktopEl.textContent = title;
 
             // Atualizar info do usuário no header (com avatar se disponível)
             const userDisplay = this.container.querySelector('.live-modal-user-display');
@@ -368,6 +510,9 @@ window.LiveModal = (function () {
 
             // Carregar mensagens do servidor
             await this.loadChatFromServer();
+
+            // Enviar presença imediata ao abrir modal
+            try { await this.pingPresence(); } catch (e) { /* ignore */ }
 
             // Iniciar sincronização em tempo real
             this.startSync();
@@ -1879,6 +2024,9 @@ window.LiveModal = (function () {
                     console.log(`[LiveModal] ${this.messages.length} mensagens carregadas - ${this.messages.filter(m => m.avatar).length} com avatar`);
                     this.renderChat();
                     this.lastSyncTime = Date.now();
+                    
+                    // Atualizar contagem de usuários online
+                    this.updateOnlineCount();
                 }
             } catch (error) {
                 console.log('[LiveModal] Usando chat local (sem sincronização)');
@@ -1941,10 +2089,54 @@ window.LiveModal = (function () {
                             this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
                         }, 0);
                     }
+                    
+                    // Atualizar contagem de usuários online localmente
+                    this.updateOnlineCount();
+
+                    // Enviar presença ao servidor a cada 5 segundos para contagem real
+                    if (!this._lastPresencePing) this._lastPresencePing = 0;
+                    if (Date.now() - this._lastPresencePing > 5000) {
+                        this._lastPresencePing = Date.now();
+                        this.pingPresence().catch(()=>{});
+                    }
                 } catch (error) {
                     // Silenciosamente ignorar erros
                 }
             }, 1000); // Aumentado para 1 segundo para sincronização mais rápida
+        },
+
+        /**
+         * Atualiza a contagem de usuários online baseado no servidor (presenceId)
+         * Esta função é usada como fallback quando o server está disponível
+         */
+        updateOnlineCount() {
+            if (!this.chatHeaderOnlineCount) return;
+            // Apenas chamar pingPresence para obter contagem atualizada do servidor
+            this.pingPresence().catch(()=>{});
+        },
+
+        /**
+         * Envia presença ao servidor e atualiza contagem baseada no servidor
+         */
+        async pingPresence() {
+            if (!this.currentVideoId || !this.chatHeaderOnlineCount) return;
+            try {
+                const id = this.presenceId || this.userEmail || this.userName || (sessionStorage.getItem('liveModalGuestId') || 'guest');
+                const resp = await fetch('/api/chat/presence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ videoId: this.currentVideoId, id, email: this.userEmail || null })
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (data && typeof data.count === 'number') {
+                    const c = Math.max(1, data.count);
+                    this.chatHeaderOnlineCount.textContent = c === 1 ? '1 online' : `${c} online`;
+                }
+            } catch (e) {
+                // ignore
+            }
         },
 
         /**

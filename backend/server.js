@@ -398,6 +398,24 @@ const wss = new WebSocket.Server({
 });
 const playlistClients = new Set();
 const chatClients = new Map(); // Map para armazenar clientes de chat por videoId
+// Presença em memória: Map<videoId, Map<clientId, { lastSeen, email? }>>
+const presenceMap = new Map();
+
+// Timeout para considerar um cliente desconectado (ms)
+const PRESENCE_TIMEOUT = 35 * 1000; // 35 segundos
+
+// Limpa presenças antigas periodicamente
+setInterval(() => {
+  const now = Date.now();
+  for (const [videoId, map] of presenceMap.entries()) {
+    for (const [clientId, info] of map.entries()) {
+      if (now - (info && info.lastSeen ? info.lastSeen : 0) > PRESENCE_TIMEOUT) {
+        map.delete(clientId);
+      }
+    }
+    if (map.size === 0) presenceMap.delete(videoId);
+  }
+}, 10 * 1000);
 
 // Log WebSocket server initialization
 console.log('[WebSocket] Inicializando servidor de playlist WebSocket');
@@ -770,6 +788,66 @@ app.get('/sse', (req, res) => {
   req.on('close', () => {
     sseClients.delete(res);
   });
+});
+
+// Endpoint para atualizar/consultar presença no chat
+// POST /api/chat/presence  { videoId, id? }
+// GET  /api/chat/presence?videoId=...
+app.post('/api/chat/presence', (req, res) => {
+  try {
+    const { videoId, id } = req.body || {};
+    if (!videoId) return res.status(400).json({ error: 'videoId required' });
+
+    // Usar o id fornecido como presenceId (único por aba)
+    // Se não fornecido, usar um identificador de sessão
+    const presenceId = (id || req.session && req.session.userId || req.ip || 'anon').toString();
+    const vid = videoId.toString();
+
+    let map = presenceMap.get(vid);
+    if (!map) {
+      map = new Map();
+      presenceMap.set(vid, map);
+    }
+    const email = (req.body && req.body.email) ? String(req.body.email).toLowerCase() : null;
+    // Guardar presenceId como chave principal - cada aba tem um presenceId único
+    map.set(presenceId, { lastSeen: Date.now(), email });
+
+    // limpar antigos
+    const now = Date.now();
+    for (const [k, info] of map.entries()) {
+      if (!info || !info.lastSeen || (now - info.lastSeen > PRESENCE_TIMEOUT)) map.delete(k);
+    }
+
+    // Contar cada presenceId como uma aba/sessão
+    const count = map.size;
+    // opcionalmente enviar SSE para clientes interessados
+    try { sendSseEvent('chat-presence', { videoId: vid, count }); } catch (e) {}
+
+    return res.json({ ok: true, count });
+  } catch (err) {
+    console.error('presence POST error', err);
+    return res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.get('/api/chat/presence', (req, res) => {
+  try {
+    const videoId = req.query.videoId;
+    if (!videoId) return res.status(400).json({ error: 'videoId required' });
+    const map = presenceMap.get(videoId) || new Map();
+    // limpar antigos antes de contar
+    const now = Date.now();
+    for (const [k, info] of map.entries()) {
+      if (!info || !info.lastSeen || (now - info.lastSeen > PRESENCE_TIMEOUT)) map.delete(k);
+    }
+
+    // Contar cada presenceId como uma aba/sessão
+    const count = map.size;
+    return res.json({ ok: true, count });
+  } catch (err) {
+    console.error('presence GET error', err);
+    return res.status(500).json({ error: 'server_error' });
+  }
 });
 
 function gerarId() {
