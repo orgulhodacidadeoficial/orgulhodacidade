@@ -12,12 +12,28 @@
     text-align: center;
     animation: fadeIn 0.8s ease;
     border-bottom: 2px solid rgba(255,138,0,0.08);
-    margin-top: 0;
+    margin-top: -50px;
 }
 
 .hero-cta-content {
     max-width: 900px;
     margin: 0 auto;
+}
+
+/* Logo acima do título hero, centralizada */
+.hero-logo {
+    display: block;
+    margin: 16px auto 18px;
+    width: auto;
+    max-width: 220px;
+    height: auto;
+}
+
+@media (max-width: 768px) {
+    .hero-logo {
+        max-width: 280px;
+        margin-bottom: 12px;
+    }
 }
 
 .hero-title {
@@ -124,7 +140,7 @@
 .apresentacoes {
     background: linear-gradient(180deg, #000000 0%, #0a0a14 50%, #000000 100%);
     padding: 60px 20px;
-    margin: -21px 0
+    
 }
 
 .apresentacoes h2 {
@@ -161,6 +177,57 @@
 .highlights {
     background: #000000;
     padding: 60px 20px;
+}
+
+/* aplicar imagem de fundo na seção específica (highlights + section-spacing) */
+.highlights.section-spacing {
+    position: relative;
+    background: none; /* remove cor sólida para mostrar a imagem */
+    padding: 300px 20px;
+    overflow: visible;
+}
+
+.highlights.section-spacing::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('images/Fundo.png');
+    /* aumentar para destacar a marca/arte e deslocar para mostrar logo/nome */
+    background-size: 140%;
+    /* mover a imagem um pouco para cima para expor logo/nome localizado na parte superior */
+    background-position: center 22%;
+    background-repeat: no-repeat;
+    /* realçar levemente a imagem para aparecer por baixo do overlay */
+    filter: saturate(1.02) brightness(1.02);
+    z-index: 0;
+}
+
+/* overlay escuro para garantir legibilidade */
+.highlights.section-spacing::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    /* overlay mais suave no centro superior para revelar o logo/nome,
+       e mais escuro nas bordas para manter legibilidade do conteúdo */
+    background: radial-gradient(circle at 50% 22%, rgba(0,0,0,0.12), rgba(0,0,0,0.36) 35%, rgba(0,0,0,0.6) 100%);
+    z-index: 1;
+}
+
+/* conteúdo da seção acima do fundo/overlay */
+.highlights.section-spacing > * {
+    position: relative;
+    z-index: 2;
+}
+
+@media (max-width: 768px) {
+    .highlights.section-spacing::before {
+        background-image: url('images/FundoMobile.png');
+        background-position: top center;
+        background-size: cover;
+    }
+    .highlights.section-spacing {
+        padding: 108px 14px;
+    }
 }
 
 .highlights .music-title {
